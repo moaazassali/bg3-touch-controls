@@ -4,6 +4,10 @@
 #include <thread>
 #include <chrono>
 
+LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+// Store the original window procedure
+WNDPROC g_originalWndProc = nullptr;
+
 static void createConsole()
 {
 	AllocConsole();
@@ -46,11 +50,27 @@ static HWND findMainWindowForCurrentProcess()
 	return hwnd;
 }
 
+/// <summary>
+/// Subclass the game window to use our custom window procedure.
+/// </summary>
+/// <param name="hwnd">The handle to the game window.</param>
+static void subclassGameWindow(HWND hwnd)
+{
+	g_originalWndProc = (WNDPROC)SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)customWndProc);
+	if (g_originalWndProc) {
+		std::cout << "Window subclassed successfully." << std::endl;
+	}
+	else {
+		std::cout << "FAILURE: Could not subclass window. Error: " << GetLastError() << std::endl;
+	}
+}
+
 // Main start point for the dll injection thread
 DWORD WINAPI setupThread(LPVOID lpParam)
 {
 	createConsole();
 	HWND hGameWnd = findMainWindowForCurrentProcess();
+	subclassGameWindow(hGameWnd);
 
 	std::cout << "\n--- Press any key to close. ---" << std::endl;
 	std::cin.get();
