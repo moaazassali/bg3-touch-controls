@@ -9,13 +9,10 @@ endif()
 
 cmake_minimum_required (VERSION 3.31.6)
 
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 project ("BG3TouchInput")
 
 # Add source to this project's executable.
 add_executable (BG3TouchInput "BG3TouchInput.cpp" "BG3TouchInput.h")
-
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET BG3TouchInput PROPERTY CXX_STANDARD 20)
-endif()
-
-# TODO: Add tests and install targets if needed.
