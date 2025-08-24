@@ -7,6 +7,7 @@
 
 LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void initializeInteractionContext(HWND hwnd);
+void installHooks();
 
 WNDPROC g_originalWndProc = nullptr; // Store original window procedure
 HINTERACTIONCONTEXT g_hInteractionContext;
@@ -75,6 +76,7 @@ DWORD WINAPI setupThread(LPVOID lpParam)
 	HWND hGameWnd = findMainWindowForCurrentProcess();
 	subclassGameWindow(hGameWnd);
 	initializeInteractionContext(hGameWnd);
+	installHooks();
 
 	std::cout << "\n--- Press any key to close. ---" << std::endl;
 	std::cin.get();
