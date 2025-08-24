@@ -3,7 +3,7 @@
 
 extern WNDPROC g_originalWndProc;
 
-LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
+LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg) {
 	case WM_TOUCH:

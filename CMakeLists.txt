@@ -16,3 +16,6 @@ project ("BG3TouchInput")
 
 # Add source to this project's executable.
 add_library (BG3TouchInput SHARED "src/dllmain.cpp" "src/setup_thread.cpp" "src/custom_wnd_proc.cpp")
+
+# Neded for Interaction Context
+target_link_libraries(BG3TouchInput PRIVATE ninput)
