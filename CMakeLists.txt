@@ -18,4 +18,15 @@ project ("BG3TouchInput")
 add_library (BG3TouchInput SHARED "src/dllmain.cpp" "src/setup_thread.cpp" "src/custom_wnd_proc.cpp" "src/interaction_context.cpp")
 
 # Neded for Interaction Context
+# See Requirements section in https://learn.microsoft.com/en-us/windows/win32/api/interactioncontext/nf-interactioncontext-createinteractioncontext
 target_link_libraries(BG3TouchInput PRIVATE ninput)
+
+# Add MinHook using FetchContent
+include(FetchContent)
+FetchContent_Declare(
+  minhook
+  GIT_REPOSITORY https://github.com/TsudaKageyu/minhook.git
+  GIT_TAG        master 
+)
+FetchContent_MakeAvailable(minhook)
+target_link_libraries(BG3TouchInput PRIVATE minhook)
