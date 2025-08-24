@@ -15,7 +15,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project ("BG3TouchInput")
 
 # Add source to this project's executable.
-add_library (BG3TouchInput SHARED "src/dllmain.cpp" "src/setup_thread.cpp" "src/custom_wnd_proc.cpp" "src/interaction_context.cpp")
+add_library (BG3TouchInput SHARED
+	"src/dllmain.cpp"
+	"src/setup_thread.cpp"
+	"src/custom_wnd_proc.cpp"
+	"src/interaction_context.cpp"
+	"src/hooks.cpp"
+)
+
+target_include_directories(BG3TouchInput PRIVATE "include/")
 
 # Neded for Interaction Context
 # See Requirements section in https://learn.microsoft.com/en-us/windows/win32/api/interactioncontext/nf-interactioncontext-createinteractioncontext
