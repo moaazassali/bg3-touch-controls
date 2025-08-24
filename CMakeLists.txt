@@ -15,4 +15,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project ("BG3TouchInput")
 
 # Add source to this project's executable.
-add_library (BG3TouchInput "dllmain.cpp")
+add_library (BG3TouchInput "src/dllmain.cpp")
