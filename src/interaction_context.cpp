@@ -6,6 +6,7 @@ extern HINTERACTIONCONTEXT g_hInteractionContext;
 
 // https://learn.microsoft.com/en-us/windows/win32/api/interactioncontext/ne-interactioncontext-interaction_id
 // https://learn.microsoft.com/en-us/windows/win32/api/interactioncontext/ne-interactioncontext-interaction_configuration_flags
+// Remember to update the configurationCount in SetInteractionConfigurationInteractionContext
 static const INTERACTION_CONTEXT_CONFIGURATION config[] = {
 	{
 		INTERACTION_ID_TAP,
@@ -17,6 +18,12 @@ static const INTERACTION_CONTEXT_CONFIGURATION config[] = {
 		INTERACTION_ID_HOLD,
 		INTERACTION_CONFIGURATION_FLAG_HOLD |
 		INTERACTION_CONFIGURATION_FLAG_HOLD_MULTIPLE_FINGER
+	},
+	{
+		INTERACTION_ID_MANIPULATION,
+		INTERACTION_CONFIGURATION_FLAG_MANIPULATION |
+		INTERACTION_CONFIGURATION_FLAG_MANIPULATION_TRANSLATION_X |
+		INTERACTION_CONFIGURATION_FLAG_MANIPULATION_TRANSLATION_Y
 	}
 };
 
@@ -29,6 +36,18 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		break;
 	case INTERACTION_ID_HOLD:
 		std::cout << "HOLD event detected with " << output->contactCount << " contacts." << std::endl;
+		break;
+	case INTERACTION_ID_MANIPULATION:
+		std::cout << std::format(
+			"MANIPULATION event detected: {} contacts.\n"
+			"  [Delta]      x: {:>7.2f}  y: {:>7.2f}\n"
+			"  [Cumulative] x: {:>7.2f}  y: {:>7.2f}\n",
+			output->contactCount,
+			output->arguments.manipulation.delta.translationX,
+			output->arguments.manipulation.delta.translationY,
+			output->arguments.manipulation.cumulative.translationX,
+			output->arguments.manipulation.cumulative.translationY
+		);
 		break;
 	default:
 		std::cout << "Other interaction event detected: " << output->interactionId << std::endl;
@@ -50,7 +69,7 @@ void initializeInteractionContext(HWND hwnd)
 
 		hResult = SetInteractionConfigurationInteractionContext(
 			g_hInteractionContext,
-			2,
+			3,
 			config
 		);
 		if FAILED(hResult) {
