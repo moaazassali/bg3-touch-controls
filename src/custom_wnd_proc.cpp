@@ -7,9 +7,6 @@
 extern WNDPROC g_originalWndProc;
 extern HINTERACTIONCONTEXT g_hInteractionContext;
 
-std::map<UINT32, POINTER_INFO> activePointers;
-std::mutex pointersMutex;
-
 static void processBufferedPacketsIfReady() {
 	// We will update the camera state at most 60 times per second
 	// We should probably make it configurable later and test what works best
@@ -19,7 +16,7 @@ static void processBufferedPacketsIfReady() {
 	auto now = clock::now();
 	constexpr auto minInterval = std::chrono::duration<double>(1.0 / 60.0); // ~16.6667 ms
 	if (now - lastTime >= minInterval) {
-		// process the pointer updates
+		ProcessBufferedPacketsInteractionContext(g_hInteractionContext);
 		lastTime = now;
 	}
 }
@@ -31,9 +28,8 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 		UINT32 pointerId = GET_POINTERID_WPARAM(wParam);
 		POINTER_INFO pointerInfo;
 		if (GetPointerInfo(pointerId, &pointerInfo)) {
-			std::lock_guard<std::mutex> lock(pointersMutex);
-			activePointers[pointerId] = pointerInfo;
 			AddPointerInteractionContext(g_hInteractionContext, pointerId);
+			BufferPointerPacketsInteractionContext(g_hInteractionContext, 1, &pointerInfo);
 		}
 		processBufferedPacketsIfReady();
 		return 0;
@@ -42,8 +38,7 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 		UINT32 pointerId = GET_POINTERID_WPARAM(wParam);
 		POINTER_INFO pointerInfo;
 		if (GetPointerInfo(pointerId, &pointerInfo)) {
-			std::lock_guard<std::mutex> lock(pointersMutex);
-			activePointers[pointerId] = pointerInfo;
+			BufferPointerPacketsInteractionContext(g_hInteractionContext, 1, &pointerInfo);
 		}
 		processBufferedPacketsIfReady();
 		return 0;
@@ -51,25 +46,18 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 	case WM_POINTERUP: {
 		UINT32 pointerId = GET_POINTERID_WPARAM(wParam);
 		POINTER_INFO pointerInfo;
-		// Add final update and then remove it from the interaction context and active pointers
+		// Add final update and then remove it from the interaction context
 		// If we don't do this, the last position isn't registered
 		// But is that really necessary?
 		// These events are sent in quick succession anyway, which is probably way faster
-		// than the camera update rate of the game (the fps).
+		// than our processing rate of the gestures (60hz now).
 		// What if a touch happens really fast, like a tap?
-		// Does that mean we will register it and then immediately remove it before the game
-		// can do anything with it?
-		// Maybe we should buffer multiple frames and clear them after processing in the game loop?
-		// The game loop could erase all the pointers in the activePointers map that are WM_POINTERUP.
+		// Does that mean we will register it and then immediately remove it before we process it?
+		// Maybe we should remove the pointer only after processing it in processBufferedPacketsIfReady?
 		// Needs careful testing.
 		if (GetPointerInfo(pointerId, &pointerInfo)) {
-			std::lock_guard<std::mutex> lock(pointersMutex);
-			activePointers[pointerId] = pointerInfo;
-		}
-		RemovePointerInteractionContext(g_hInteractionContext, pointerId);
-		{
-			std::lock_guard<std::mutex> lock(pointersMutex);
-			activePointers.erase(pointerId);
+			BufferPointerPacketsInteractionContext(g_hInteractionContext, 1, &pointerInfo);
+			RemovePointerInteractionContext(g_hInteractionContext, pointerId);
 		}
 		processBufferedPacketsIfReady();
 		return 0;
