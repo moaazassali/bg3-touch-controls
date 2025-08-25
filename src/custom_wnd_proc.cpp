@@ -64,10 +64,35 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 		// Does that mean we will register it and then immediately remove it before we process it?
 		// Maybe we should remove the pointer only after processing it in processBufferedPacketsIfReady?
 		// Needs careful testing.
+		// 
+		// UPDATE:
+		// As expected, no interactions are being detected if we call RemovePointerInteractionContext here.
+		// The issue isn't even just for quick taps, but also for longer touches.
+		// Because we call RemovePointerInteractionContext immediately after buffering the packet,
+		// the interaction context doesn't have a chance to process the buffered packets before the pointer is
+		// removed from the set of pointers it tracks. This results in no interactions being detected at all.
+		// So actually, ANY interaction that relies on WM_POINTERUP to signal the end of the interaction
+		// will fail to be detected.
 		if (GetPointerInfo(pointerId, &pointerInfo)) {
 			if FAILED(BufferPointerPacketsInteractionContext(g_hInteractionContext, 1, &pointerInfo)) {
 				std::cout << "Failed to buffer pointer packet in WM_POINTERUP." << std::endl;
 			}
+			// Force processing of buffered packets to ensure the interaction is recognized
+			// This will not be called too often, only on pointer up events
+			// so there should be no performance issues
+			// As fast as the user can tap, it will never be more than 10-20 times a second which
+			// is negligible compared to our 60hz update rate.
+			// 
+			// UPDATE:
+			// This is causing an issue with hold interactions where they get triggered again when the hold is released.
+			// Needs further investigation. But for now, we will keep it so the rest of the interactions work.
+			// If nothing works, we can always store the pointerId(s) of the hold and skip processing any hold
+			// from the same pointerId(s).
+			// What if the same pointerId is used for a new touch after the hold is released? Is that possible?
+			// If so, we need to clear the stored pointerId(s) when a new touch is detected for the same pointerId.
+			// Or we could also remove it from our set in here after removing it from the interaction context.
+			// Think about what's safer/better.
+			ProcessBufferedPacketsInteractionContext(g_hInteractionContext);
 			if FAILED(RemovePointerInteractionContext(g_hInteractionContext, pointerId)) {
 				std::cout << "Failed to remove pointer in WM_POINTERUP." << std::endl;
 			}
