@@ -75,7 +75,6 @@ static bool getModuleRange(uintptr_t& start, uintptr_t& end)
 // Based on manual testing, this is called on every frame and is tied to the frame rate.
 static void detour_updateCamera(uint64_t a1, uint64_t a2, uint64_t a3, RE::UnkObject* a4)
 {
-	std::cout << "Camera update called" << std::endl;
 	original_updateCamera(a1, a2, a3, a4);
 }
 
