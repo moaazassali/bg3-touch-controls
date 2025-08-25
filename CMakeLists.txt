@@ -21,7 +21,7 @@ add_library (BG3TouchInput SHARED
 	"src/custom_wnd_proc.cpp"
 	"src/interaction_context.cpp"
 	"src/hooks.cpp"
-)
+ "include/pending_camera_updates.h")
 
 target_include_directories(BG3TouchInput PRIVATE "include/")
 

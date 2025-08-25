@@ -1,0 +1,8 @@
+#pragma once
+#include <atomic>
+
+struct PendingCameraUpdates {
+	std::atomic<float> angleDelta{ 0.0f };
+};
+
+extern PendingCameraUpdates g_pendingCameraUpdates;
