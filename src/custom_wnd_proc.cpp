@@ -3,6 +3,7 @@
 #include <map>
 #include <mutex>
 #include <chrono>
+#include <iostream>
 
 extern WNDPROC g_originalWndProc;
 extern HINTERACTIONCONTEXT g_hInteractionContext;
@@ -16,7 +17,9 @@ static void processBufferedPacketsIfReady() {
 	auto now = clock::now();
 	constexpr auto minInterval = std::chrono::duration<double>(1.0 / 60.0); // ~16.6667 ms
 	if (now - lastTime >= minInterval) {
-		ProcessBufferedPacketsInteractionContext(g_hInteractionContext);
+		if FAILED(ProcessBufferedPacketsInteractionContext(g_hInteractionContext)) {
+			std::cout << "Failed to process buffered packets." << std::endl;
+		}
 		lastTime = now;
 	}
 }
@@ -28,8 +31,12 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 		UINT32 pointerId = GET_POINTERID_WPARAM(wParam);
 		POINTER_INFO pointerInfo;
 		if (GetPointerInfo(pointerId, &pointerInfo)) {
-			AddPointerInteractionContext(g_hInteractionContext, pointerId);
-			BufferPointerPacketsInteractionContext(g_hInteractionContext, 1, &pointerInfo);
+			if FAILED(AddPointerInteractionContext(g_hInteractionContext, pointerId)) {
+				std::cout << "Failed to add pointer in WM_POINTERDOWN." << std::endl;
+			}
+			if FAILED(BufferPointerPacketsInteractionContext(g_hInteractionContext, 1, &pointerInfo)) {
+				std::cout << "Failed to buffer pointer packet in WM_POINTERDOWN." << std::endl;
+			}
 		}
 		processBufferedPacketsIfReady();
 		return 0;
@@ -38,7 +45,9 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 		UINT32 pointerId = GET_POINTERID_WPARAM(wParam);
 		POINTER_INFO pointerInfo;
 		if (GetPointerInfo(pointerId, &pointerInfo)) {
-			BufferPointerPacketsInteractionContext(g_hInteractionContext, 1, &pointerInfo);
+			if FAILED(BufferPointerPacketsInteractionContext(g_hInteractionContext, 1, &pointerInfo)) {
+				std::cout << "Failed to buffer pointer packet in WM_POINTERUPDATE." << std::endl;
+			}
 		}
 		processBufferedPacketsIfReady();
 		return 0;
@@ -56,8 +65,12 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 		// Maybe we should remove the pointer only after processing it in processBufferedPacketsIfReady?
 		// Needs careful testing.
 		if (GetPointerInfo(pointerId, &pointerInfo)) {
-			BufferPointerPacketsInteractionContext(g_hInteractionContext, 1, &pointerInfo);
-			RemovePointerInteractionContext(g_hInteractionContext, pointerId);
+			if FAILED(BufferPointerPacketsInteractionContext(g_hInteractionContext, 1, &pointerInfo)) {
+				std::cout << "Failed to buffer pointer packet in WM_POINTERUP." << std::endl;
+			}
+			if FAILED(RemovePointerInteractionContext(g_hInteractionContext, pointerId)) {
+				std::cout << "Failed to remove pointer in WM_POINTERUP." << std::endl;
+			}
 		}
 		processBufferedPacketsIfReady();
 		return 0;

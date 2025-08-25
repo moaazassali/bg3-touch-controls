@@ -21,7 +21,19 @@ static const INTERACTION_CONTEXT_CONFIGURATION config[] = {
 };
 
 static void CALLBACK interactionContextCallback(void* clientData, const INTERACTION_CONTEXT_OUTPUT2* output) {
-
+	// print interaction type
+	switch (output->interactionId) {
+	case INTERACTION_ID_TAP:
+		std::cout << "TAP event detected with " << output->arguments.tap.count << " taps and "
+			<< output->contactCount << " contacts." << std::endl;
+		break;
+	case INTERACTION_ID_HOLD:
+		std::cout << "HOLD event detected with " << output->contactCount << " contacts." << std::endl;
+		break;
+	default:
+		std::cout << "Other interaction event detected: " << output->interactionId << std::endl;
+		break;
+	}
 }
 
 void initializeInteractionContext(HWND hwnd)
