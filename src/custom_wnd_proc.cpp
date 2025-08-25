@@ -2,12 +2,27 @@
 #include <InteractionContext.h>
 #include <map>
 #include <mutex>
+#include <chrono>
 
 extern WNDPROC g_originalWndProc;
 extern HINTERACTIONCONTEXT g_hInteractionContext;
 
 std::map<UINT32, POINTER_INFO> activePointers;
 std::mutex pointersMutex;
+
+static void processBufferedPacketsIfReady() {
+	// We will update the camera state at most 60 times per second
+	// We should probably make it configurable later and test what works best
+	// Also test performance impact and accuracy of the update rate
+	using clock = std::chrono::steady_clock;
+	static auto lastTime = clock::now();
+	auto now = clock::now();
+	constexpr auto minInterval = std::chrono::duration<double>(1.0 / 60.0); // ~16.6667 ms
+	if (now - lastTime >= minInterval) {
+		// process the pointer updates
+		lastTime = now;
+	}
+}
 
 LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -20,6 +35,7 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 			activePointers[pointerId] = pointerInfo;
 			AddPointerInteractionContext(g_hInteractionContext, pointerId);
 		}
+		processBufferedPacketsIfReady();
 		return 0;
 	}
 	case WM_POINTERUPDATE: {
@@ -29,6 +45,7 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 			std::lock_guard<std::mutex> lock(pointersMutex);
 			activePointers[pointerId] = pointerInfo;
 		}
+		processBufferedPacketsIfReady();
 		return 0;
 	}
 	case WM_POINTERUP: {
@@ -54,6 +71,7 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 			std::lock_guard<std::mutex> lock(pointersMutex);
 			activePointers.erase(pointerId);
 		}
+		processBufferedPacketsIfReady();
 		return 0;
 	}
 	}
