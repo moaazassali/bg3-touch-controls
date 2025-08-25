@@ -91,20 +91,23 @@ void installHooks()
 		MH_Uninitialize();
 		return;
 	}
-	uintptr_t addr = findPattern(
+	uintptr_t callAddr = findPattern(
 		"E8 ?? ?? ?? ?? 48 8D 8D F8 04 00 00 E8 ?? ?? ?? ?? E9 AF FD FF FF",
 		start,
 		end
 	);
+	// Calculate the target function address from the CALL instruction
+	int32_t relativeOffset = *reinterpret_cast<int32_t*>(callAddr + 1);
+	uintptr_t targetAddr = callAddr + 5 + relativeOffset;
 
-	if (MH_CreateHook((void*)addr, &detour_updateCamera, (void**)&original_updateCamera) != MH_OK)
+	if (MH_CreateHook((void*)targetAddr, &detour_updateCamera, (void**)&original_updateCamera) != MH_OK)
 	{
 		std::cout << "Failed to create hook." << std::endl;
 		MH_Uninitialize();
 		return;
 	}
 
-	if (MH_EnableHook((void*)addr) != MH_OK)
+	if (MH_EnableHook((void*)targetAddr) != MH_OK)
 	{
 		printf("Failed to enable hook\n");
 		MH_Uninitialize();
