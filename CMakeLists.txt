@@ -1,4 +1,4 @@
-﻿# CMakeList.txt : CMake project for BG3TouchInput, include source and define
+﻿# CMakeList.txt : CMake project for BG3TouchControls, include source and define
 # project specific logic here.
 #
 # Enable Hot Reload for MSVC compilers if supported.
@@ -12,10 +12,10 @@ cmake_minimum_required (VERSION 3.31.6)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project ("BG3TouchInput")
+project ("BG3TouchControls")
 
 # Add source to this project's executable.
-add_library (BG3TouchInput SHARED
+add_library (BG3TouchControls SHARED
 	"src/dllmain.cpp"
 	"src/setup_thread.cpp"
 	"src/custom_wnd_proc.cpp"
@@ -23,11 +23,11 @@ add_library (BG3TouchInput SHARED
 	"src/hooks.cpp"
  "include/pending_camera_updates.h")
 
-target_include_directories(BG3TouchInput PRIVATE "include/")
+target_include_directories(BG3TouchControls PRIVATE "include/")
 
 # Neded for Interaction Context
 # See Requirements section in https://learn.microsoft.com/en-us/windows/win32/api/interactioncontext/nf-interactioncontext-createinteractioncontext
-target_link_libraries(BG3TouchInput PRIVATE ninput)
+target_link_libraries(BG3TouchControls PRIVATE ninput)
 
 # Add MinHook using FetchContent
 include(FetchContent)
@@ -37,4 +37,4 @@ FetchContent_Declare(
   GIT_TAG        master 
 )
 FetchContent_MakeAvailable(minhook)
-target_link_libraries(BG3TouchInput PRIVATE minhook)
+target_link_libraries(BG3TouchControls PRIVATE minhook)
