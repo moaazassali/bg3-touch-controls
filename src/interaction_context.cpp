@@ -1,8 +1,10 @@
 #include <windows.h>
 #include <iostream>
 #include <InteractionContext.h>
+#include "pending_camera_updates.h"
 
 extern HINTERACTIONCONTEXT g_hInteractionContext;
+PendingCameraUpdates g_pendingCameraUpdates;
 
 // https://learn.microsoft.com/en-us/windows/win32/api/interactioncontext/ne-interactioncontext-interaction_id
 // https://learn.microsoft.com/en-us/windows/win32/api/interactioncontext/ne-interactioncontext-interaction_configuration_flags
@@ -38,17 +40,16 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		std::cout << "HOLD event detected with " << output->contactCount << " contacts." << std::endl;
 		break;
 	case INTERACTION_ID_MANIPULATION:
-		std::cout << std::format(
-			"MANIPULATION event detected: {} contacts.\n"
-			"  [Delta]      x: {:>7.2f}  y: {:>7.2f}\n"
-			"  [Cumulative] x: {:>7.2f}  y: {:>7.2f}\n",
-			output->contactCount,
-			output->arguments.manipulation.delta.translationX,
-			output->arguments.manipulation.delta.translationY,
-			output->arguments.manipulation.cumulative.translationX,
-			output->arguments.manipulation.cumulative.translationY
-		);
+	{
+		// Let's also use x translation to rotate the camera for now
+		// This should be configurable. i.e. use x translation for panning vs rotation.
+		// Think about the memory ordering and atomicity here later
+		// Does only atomicity matter? Is the performance benefit worth it?
+		// We should make rotationFactor based on window width I think? and also configurable.
+		constexpr float rotationFactor = 0.1f;
+		g_pendingCameraUpdates.angleDelta.fetch_add(output->arguments.manipulation.delta.translationX * rotationFactor);
 		break;
+	}
 	default:
 		std::cout << "Other interaction event detected: " << output->interactionId << std::endl;
 		break;

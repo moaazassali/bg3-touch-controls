@@ -4,6 +4,7 @@
 #include <vector>
 #include <MinHook.h>
 #include "RE/Camera.h"
+#include "pending_camera_updates.h"
 
 // Typedef and pattern for the camera update function. Taken from BG3_NativeCameraTweaks:
 // https://github.com/ersh1/BG3_NativeCameraTweaks/blob/876f2da98ede96d3db2884ffd9fb25687ada5ff1/src/Hooks.h
@@ -75,6 +76,24 @@ static bool getModuleRange(uintptr_t& start, uintptr_t& end)
 // Based on manual testing, this is called on every frame and is tied to the frame rate.
 static void detour_updateCamera(uint64_t a1, uint64_t a2, uint64_t a3, RE::UnkObject* a4)
 {
+	// There are two CameraObject pointers in UnkObject. Only currentCameraObject seems to work.
+	// Updating desiredCameraObject2 doesn't seem to have any effect.
+	if (a4 && a4->currentCameraObject) {
+		auto cam = a4->currentCameraObject;
+		auto angleDelta = g_pendingCameraUpdates.angleDelta.exchange(0.0f);
+		// We will use the amount of angleDelta as a measure of how fast we want to rotate.
+		// This makes sense since angleDelta is based on how far the user moved their finger
+		// within a frame, which is a measure of speed.
+		// I attempted adjusting camer angle directly first but it didn't work well.
+		// The range of the angle field is from (-360, 360) according to testing.
+		// But how do you represent a fast rotation with that and especially one that involves
+		// possibly multiple full rotations in one frame (unlikely)?
+		// Although this exact logic of trying to update angle was causing sudden camera jumps
+		// for fast swipes and jittery behavior The rotation somehow didn't always change just 
+		// the axis we want but seemed to affect axes?
+		// Invert for natural feel. Add as a config.
+		cam->currentAngleDelta = -angleDelta;
+	}
 	original_updateCamera(a1, a2, a3, a4);
 }
 
