@@ -48,6 +48,9 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		// We should make rotationFactor based on window width I think? and also configurable.
 		constexpr float rotationFactor = 0.1f;
 		g_pendingCameraUpdates.angleDelta.fetch_add(output->arguments.manipulation.delta.translationX * rotationFactor);
+
+		constexpr float zoomFactor = 1.0f;
+		g_pendingCameraUpdates.zoomDelta.fetch_add(output->arguments.manipulation.delta.translationY * zoomFactor);
 		break;
 	}
 	default:

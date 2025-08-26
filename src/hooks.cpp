@@ -93,6 +93,9 @@ static void detour_updateCamera(uint64_t a1, uint64_t a2, uint64_t a3, RE::UnkOb
 		// the axis we want but seemed to affect axes?
 		// Invert for natural feel. Add as a config.
 		cam->currentAngleDelta = -angleDelta;
+		
+		// Similar rationale to angleDelta above.
+		cam->zoomDelta = g_pendingCameraUpdates.zoomDelta.exchange(0.0f);
 	}
 	original_updateCamera(a1, a2, a3, a4);
 }

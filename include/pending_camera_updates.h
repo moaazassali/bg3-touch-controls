@@ -3,6 +3,7 @@
 
 struct PendingCameraUpdates {
 	std::atomic<float> angleDelta{ 0.0f };
+	std::atomic<float> zoomDelta{ 0.0f };
 };
 
 extern PendingCameraUpdates g_pendingCameraUpdates;
