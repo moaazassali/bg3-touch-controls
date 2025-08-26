@@ -3,6 +3,7 @@
 
 
 ## Dump of useful information
+### Camera Rotation
 `CameraObject.rotationSpeed` is by default set to 90. 
 Effect not tested.
 
@@ -10,7 +11,7 @@ Effect not tested.
 It's range is (-360,360). 
 If you rotate beyond -360, it resets to 0 and continutes going towards -360.
 If you rotate beyond 360, it resets to 0 and continues going towards 360.
-Seems extra [0, -360] seems redundant/strange.
+The extra [0, -360] seems redundant/strange.
 
 `CameraObject.cameraRotation` is a vector3 where x corresponds to some scaled value of `angle`.
 It's range seems to approximately (-0.805, 0.805).
@@ -27,6 +28,7 @@ Any non-zero value makes the camera move.
 When pressing Q/E on keyboard, it gets set to 1 or -1 as long as the key is held down.
 It then resets back to 0.
 
+### Camera Zoom
 `CameraObject.unkZoom_13C` is always 1. Seems irrelevant.
 
 `CameraObject.zoomDelta` alternates between 100 and -100. 
@@ -42,6 +44,14 @@ Both of these values eventually reach `desiredZoom`.
 It's final value when the camera stops zooming is typically close to desired/current zoom, but not exactly equal.
 
 The range for the zoom values are [3.5, 12]
+
+### Camera Panning
+`CameraObject.horizontalPanDelta` is the speed of horizontal panning.
+`CameraObject.verticalPanDelta` is the speed of vertical panning.
+Both values are 0 when not panning.
+When panning with keyboard using arrow keys or WASD, the values are either 15 or -15 (default game settings).
+Chaning either value when the camera is not in "exploration mode" has no effect.
+The camera will remain centered on the player.
 
 
 ## Bugs to investigate
