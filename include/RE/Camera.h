@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-// Taken from
+// Mostly taken from with some new updates and corrections from my own research:
 // https://github.com/ersh1/BG3_NativeCameraTweaks/blob/876f2da98ede96d3db2884ffd9fb25687ada5ff1/src/RE/Camera.h
 namespace RE
 {
@@ -205,7 +205,7 @@ namespace RE
 		uint64_t unk128;
 		uint64_t unk130;
 		uint32_t unk138;
-		bool followPlayer;
+		bool followPlayer; // #new: this might be number of targets to track instead?
 		float timer_140;
 		uint32_t unk144;
 		uint64_t unk148;
@@ -282,5 +282,14 @@ namespace RE
 		bool unk05;
 		uint16_t unk06;
 		bool unk08;
+	};
+
+	// #new: struct found passed to original updateCamera
+	struct DeltaTimeObject
+	{
+		uint64_t unk00;
+		float deltaTimeSeconds;
+		float deltaTimeSeconds2; // same as deltaTime
+		// possibly more members but I only found references up to deltaTime2
 	};
 }
