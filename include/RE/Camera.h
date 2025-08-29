@@ -205,7 +205,7 @@ namespace RE
 		uint64_t unk128;
 		uint64_t unk130;
 		uint32_t unk138;
-		uint32_t unkZoom_13C;
+		bool followPlayer;
 		float timer_140;
 		uint32_t unk144;
 		uint64_t unk148;
@@ -232,7 +232,7 @@ namespace RE
 	static_assert(offsetof(CameraObject, desiredCameraRootPos) == 0x24);
 	static_assert(offsetof(CameraObject, cameraModeFlags) == 0xA8);
 	static_assert(offsetof(CameraObject, unkF8) == 0xF8);
-	static_assert(offsetof(CameraObject, unkZoom_13C) == 0x13C);
+	static_assert(offsetof(CameraObject, followPlayer) == 0x13C);
 
 	struct UnkObject
 	{

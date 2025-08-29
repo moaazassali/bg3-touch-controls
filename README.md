@@ -29,8 +29,6 @@ When pressing Q/E on keyboard, it gets set to 1 or -1 as long as the key is held
 It then resets back to 0.
 
 ### Camera Zoom
-`CameraObject.unkZoom_13C` is always 1. Seems irrelevant.
-
 `CameraObject.zoomDelta` alternates between 100 and -100. 
 -100 when zooming in and 100 when zooming out.
 When not zooming, it is 0.
