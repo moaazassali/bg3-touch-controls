@@ -37,12 +37,23 @@ namespace RE
 		kCombat = 1 << 0,
 		kUnk2 = 1 << 1,
 		kTactical = 1 << 2,
-		kUnk8 = 1 << 3,
+		kUnk8 = 1 << 3, // always set?
 		kUnk10 = 1 << 4,
 		kUnk20 = 1 << 5,
 		kUnk40 = 1 << 6,
 		kUnk80 = 1 << 7,
-		kMouseRotation = 1 << 8
+		kMouseRotation = 1 << 8,
+		// #new: only 1 in combat when focusing on party member while enemy is attacking
+		// i.e. when the camera gets focused on party member to switch focus from the enemy
+		// performing the attack initially to show the attack landing on the party member.
+		// Or a better definition is "should be focused on party member" because we if we
+		// pan the camera manually with WASD, this flag remains set despite technically the
+		// camera not being focused on the party member anymore.
+		kPlayerGettingAttacked = 1 << 9,
+		// #new: gets set to 0 in combat when focused on an enemy
+		// I think it indicates whether the camera is player controlled or not
+		// Or more precisely, whether or not a non-player entity *might* control the camera
+		kControlledByEnemy = 1 << 10,
 	};
 
 	struct CameraDefinition
