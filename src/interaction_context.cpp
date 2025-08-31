@@ -46,11 +46,20 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		// Think about the memory ordering and atomicity here later
 		// Does only atomicity matter? Is the performance benefit worth it?
 		// We should make rotationFactor based on window width I think? and also configurable.
-		constexpr float rotationFactor = 0.1f;
-		g_pendingCameraUpdates.angleDelta.fetch_add(output->arguments.manipulation.delta.translationX * rotationFactor);
+		if (output->contactCount == 1) {
+			constexpr float rotationFactor = 0.1f;
+			g_pendingCameraUpdates.angleDelta.fetch_add(output->arguments.manipulation.delta.translationX * rotationFactor);
 
-		constexpr float zoomFactor = 1.0f;
-		g_pendingCameraUpdates.zoomDelta.fetch_add(output->arguments.manipulation.delta.translationY * zoomFactor);
+			constexpr float zoomFactor = 1.0f;
+			g_pendingCameraUpdates.zoomDelta.fetch_add(output->arguments.manipulation.delta.translationY * zoomFactor);
+		}
+		else if (output->contactCount == 2) {
+			// Two finger manipulation. Use for panning. Make configurable.
+			constexpr float xPanFactor = 1.0f;
+			g_pendingCameraUpdates.xPanDelta.fetch_add(output->arguments.manipulation.delta.translationX * xPanFactor);
+			constexpr float yPanFactor = 1.0f;
+			g_pendingCameraUpdates.yPanDelta.fetch_add(output->arguments.manipulation.delta.translationY * yPanFactor);
+		}
 		break;
 	}
 	default:

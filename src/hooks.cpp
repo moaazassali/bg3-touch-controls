@@ -8,7 +8,7 @@
 
 // Typedef and pattern for the camera update function. Taken from BG3_NativeCameraTweaks:
 // https://github.com/ersh1/BG3_NativeCameraTweaks/blob/876f2da98ede96d3db2884ffd9fb25687ada5ff1/src/Hooks.h
-using updateCamera_t = void(*)(uint64_t a1, uint64_t a2, uint64_t a3, RE::UnkObject* a4);
+using updateCamera_t = void(*)(uint64_t a1, uint64_t a2, RE::DeltaTimeObject* a3, RE::UnkObject* a4);
 updateCamera_t original_updateCamera = nullptr;
 
 // Simple pattern scanner created by an LLM
@@ -74,11 +74,16 @@ static bool getModuleRange(uintptr_t& start, uintptr_t& end)
 }
 
 // Based on manual testing, this is called on every frame and is tied to the frame rate.
-static void detour_updateCamera(uint64_t a1, uint64_t a2, uint64_t a3, RE::UnkObject* a4)
+static void detour_updateCamera(uint64_t a1, uint64_t a2, RE::DeltaTimeObject* a3, RE::UnkObject* a4)
 {
 	// There are two CameraObject pointers in UnkObject. Only currentCameraObject seems to work.
 	// Updating desiredCameraObject2 doesn't seem to have any effect.
 	if (a4 && a4->currentCameraObject) {
+		// In the future, to allow for dual input modes (e.g. gamepad + touch), we will probably
+		// have to run this logic only if there are pending updates as to not override other input
+		// modes especially if some calculations are based on current value + whatever amount the
+		// user input adds.
+		// For now we assume only one input mode (touch).
 		auto cam = a4->currentCameraObject;
 		auto angleDelta = g_pendingCameraUpdates.angleDelta.exchange(0.0f);
 		// We will use the amount of angleDelta as a measure of how fast we want to rotate.
@@ -93,9 +98,20 @@ static void detour_updateCamera(uint64_t a1, uint64_t a2, uint64_t a3, RE::UnkOb
 		// the axis we want but seemed to affect axes?
 		// Invert for natural feel. Add as a config.
 		cam->currentAngleDelta = -angleDelta;
-		
+
 		// Similar rationale to angleDelta above.
 		cam->zoomDelta = g_pendingCameraUpdates.zoomDelta.exchange(0.0f);
+
+		// Only disable followPlayer if there is some panning input.
+		// The camera will unexpectedly stop following the player otherwise.
+		// horizontalPanDelta and verticalPanDelta have no effect unless followPlayer is false.
+		if (g_pendingCameraUpdates.xPanDelta.load() != 0.0f || g_pendingCameraUpdates.yPanDelta.load() != 0.0f) {
+			cam->followPlayer = false;
+		}
+
+		// invert for natural feel. Add as a config.
+		cam->horizontalPanDelta = -g_pendingCameraUpdates.xPanDelta.exchange(0.0f);
+		cam->verticalPanDelta = -g_pendingCameraUpdates.yPanDelta.exchange(0.0f);
 	}
 	original_updateCamera(a1, a2, a3, a4);
 }
