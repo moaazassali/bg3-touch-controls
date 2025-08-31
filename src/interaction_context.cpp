@@ -2,6 +2,7 @@
 #include <iostream>
 #include <InteractionContext.h>
 #include "pending_camera_updates.h"
+#include <algorithm>
 
 extern HINTERACTIONCONTEXT g_hInteractionContext;
 PendingCameraUpdates g_pendingCameraUpdates;
@@ -50,8 +51,18 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 			constexpr float rotationFactor = 0.1f;
 			g_pendingCameraUpdates.angleDelta.fetch_add(output->arguments.manipulation.delta.translationX * rotationFactor);
 
-			constexpr float zoomFactor = 1.0f;
-			g_pendingCameraUpdates.zoomDelta.fetch_add(output->arguments.manipulation.delta.translationY * zoomFactor);
+			// Disabled for now because pitch change on one-finger Y drag feels more natural.
+			// Will probably move this to rely on two-finger pinch zoom later.
+			//constexpr float zoomFactor = 1.0f;
+			//g_pendingCameraUpdates.zoomDelta.fetch_add(output->arguments.manipulation.delta.translationY * zoomFactor);
+
+			constexpr float zoomFactor = 0.1f;
+			const auto newPitch = std::clamp(
+				g_pendingCameraUpdates.pitch.load() + output->arguments.manipulation.delta.translationY * zoomFactor,
+				0.0f,
+				85.55f
+			);
+			g_pendingCameraUpdates.pitch.store(newPitch);
 		}
 		else if (output->contactCount == 2) {
 			// Two finger manipulation. Use for panning. Make configurable.

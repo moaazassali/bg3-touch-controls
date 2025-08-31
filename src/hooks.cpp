@@ -6,10 +6,19 @@
 #include "RE/Camera.h"
 #include "pending_camera_updates.h"
 
-// Typedef and pattern for the camera update function. Taken from BG3_NativeCameraTweaks:
+// Taken from BG3_NativeCameraTweaks:
 // https://github.com/ersh1/BG3_NativeCameraTweaks/blob/876f2da98ede96d3db2884ffd9fb25687ada5ff1/src/Hooks.h
 using updateCamera_t = void(*)(uint64_t a1, uint64_t a2, RE::DeltaTimeObject* a3, RE::UnkObject* a4);
 updateCamera_t original_updateCamera = nullptr;
+
+using calculatePitch_t = float(*)(RE::CameraObject* a1, uint8_t a2, uint8_t a3);
+calculatePitch_t original_calculatePitch = nullptr;
+
+using getCameraDefinition_t = RE::CameraDefinition* (*)(RE::CameraObject* a1);
+getCameraDefinition_t original_getCameraDefinition = nullptr;
+
+using updateCameraPitch_t = void(*)(uint64_t a1, uint64_t a2, RE::CameraObject* a3, RE::DeltaTimeObject* a4);
+updateCameraPitch_t original_updateCameraPitch = nullptr;
 
 // Simple pattern scanner created by an LLM
 static uintptr_t findPattern(const char* pattern, uintptr_t start, uintptr_t end)
@@ -116,6 +125,43 @@ static void detour_updateCamera(uint64_t a1, uint64_t a2, RE::DeltaTimeObject* a
 	original_updateCamera(a1, a2, a3, a4);
 }
 
+// This gets called every time in original_updateCamera when the camera.
+// It also gets called in other places but we only care about the one in original_updateCamera.
+// We have to constantly return the desired pitch here because the original calculatePitch function
+// disregards any previous pitch changes and just uses some global values.
+static float detour_calculatePitch(RE::CameraObject* a1, uint8_t a2, uint8_t a3)
+{
+	// no need to call original function because it doesn't do any state updates
+	// it just returns a float based on currentPitch and some states/global values
+	// auto pitch = original_calculatePitch(a1, a2, a3);
+	return g_pendingCameraUpdates.pitch.load();
+}
+
+// This gets called every frame in original_updateCamera
+static void detour_updateCameraPitch(uint64_t a1, uint64_t a2, RE::CameraObject* a3, RE::DeltaTimeObject* a4)
+{
+	if (a3) {
+		const auto camDef = original_getCameraDefinition(a3);
+		const auto originalA = camDef->pitchAdjustSpeedA_48;
+		const auto originalB = camDef->pitchAdjustSpeedB_F0;
+		const auto originalC = camDef->pitchAdjustSpeedC_F4;
+
+		// Set to very high values to make pitch change instant
+		// Otherwise, the game will try to smoothly interpolate to our desired pitch over a few seconds.
+		// We want the changes within this frame to be near-instant.
+		camDef->pitchAdjustSpeedA_48 = 100000.0f;
+		camDef->pitchAdjustSpeedB_F0 = 100000.0f;
+		camDef->pitchAdjustSpeedC_F4 = 100000.0f;
+
+		original_updateCameraPitch(a1, a2, a3, a4);
+
+		camDef->pitchAdjustSpeedA_48 = originalA;
+		camDef->pitchAdjustSpeedB_F0 = originalB;
+		camDef->pitchAdjustSpeedC_F4 = originalC;
+	}
+	else original_updateCameraPitch(a1, a2, a3, a4);
+}
+
 void installHooks()
 {
 	if (MH_Initialize() != MH_OK) {
@@ -152,4 +198,53 @@ void installHooks()
 	}
 
 	std::cout << "UpdateCamera hook installed successfully." << std::endl;
+
+	callAddr = findPattern(
+		"E8 ?? ?? ?? ?? 80 BF 4C 01 00 00 00",
+		start,
+		end
+	);
+	relativeOffset = *reinterpret_cast<int32_t*>(callAddr + 1);
+	targetAddr = callAddr + 5 + relativeOffset;
+	if (MH_CreateHook((void*)targetAddr, &detour_calculatePitch, (void**)&original_calculatePitch) != MH_OK)
+	{
+		std::cout << "Failed to create calculatePitch hook." << std::endl;
+		MH_Uninitialize();
+		return;
+	}
+	if (MH_EnableHook((void*)targetAddr) != MH_OK)
+	{
+		printf("Failed to enable calculatePitch hook\n");
+		MH_Uninitialize();
+		return;
+	}
+	std::cout << "calculatePitch hook installed successfully." << std::endl;
+
+	callAddr = findPattern(
+		"48 8B 05 ?? ?? ?? ?? 80 B8 32 13 00 00 00 74 07",
+		start,
+		end
+	);
+	original_getCameraDefinition = reinterpret_cast<getCameraDefinition_t>(callAddr);
+	std::cout << "getCameraDefinition hook installed successfully." << std::endl;
+
+	callAddr = findPattern(
+		"E8 ?? ?? ?? ?? 48 8B 46 70 4C 8D 45 90 0F 28 46 30",
+		start,
+		end
+	);
+	relativeOffset = *reinterpret_cast<int32_t*>(callAddr + 1);
+	targetAddr = callAddr + 5 + relativeOffset;
+	if (MH_CreateHook((void*)targetAddr, &detour_updateCameraPitch, (void**)&original_updateCameraPitch) != MH_OK)
+	{
+		std::cout << "Failed to create updateCameraPitch hook." << std::endl;
+		MH_Uninitialize();
+		return;
+	}
+	if (MH_EnableHook((void*)targetAddr) != MH_OK) {
+		printf("Failed to enable updateCameraPitch hook\n");
+		MH_Uninitialize();
+		return;
+	}
+	std::cout << "updateCameraPitch hook installed successfully." << std::endl;
 }
