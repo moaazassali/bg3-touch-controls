@@ -57,3 +57,9 @@ Crash when doing a lot of touch interactions while the game is launching?
 Maybe this is because of the console?
 
 Mouse zoom stops working after using touch to zoom?
+
+I am noticing a small amount of inertia when I stop panning for camera rotation.
+The issue might be because we are using the last 5 frames to calculate velocity,
+which might include some high delta values from the oldest one or two frames.
+Maybe we sould use a weighted average that gives more weight to the most recent frames?
+Or we could use a smaller number of frames, like 3.
