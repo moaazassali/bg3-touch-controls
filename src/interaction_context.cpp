@@ -44,7 +44,7 @@ static void handleAngleDeltaUpdate(const float rawDelta, const INTERACTION_FLAGS
 	if (interactionFlags & INTERACTION_FLAG_BEGIN) {
 		// If we are starting a new manipulation, we should stop any ongoing inertia
 		g_pendingCameraUpdates.angleDelta.store(0);
-		g_pendingCameraUpdates.inertiaState.store(InertiaState::NotInInertia);
+		g_pendingCameraUpdates.angleInertiaState.store(InertiaState::NotInInertia);
 		// reset last five deltas
 		for (auto& delta : lastFiveAngleDeltas) {
 			delta = 0.0f;
@@ -77,7 +77,7 @@ static void handleAngleDeltaUpdate(const float rawDelta, const INTERACTION_FLAGS
 			// Needed in case we start a new inertia while another is ongoing.
 			// If not set, the first frame of the new inertia won't take effect since any code relying on setting the initial
 			// "velocity" of the inertia to dampen it gradually won't run.
-			g_pendingCameraUpdates.inertiaState.store(InertiaState::InertiaStart);
+			g_pendingCameraUpdates.angleInertiaState.store(InertiaState::InertiaStart);
 		}
 	}
 	else {

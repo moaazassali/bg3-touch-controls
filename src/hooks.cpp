@@ -83,7 +83,7 @@ static bool getModuleRange(uintptr_t& start, uintptr_t& end)
 }
 
 static void handleAngleDeltaUpdate(RE::CameraObject* cam, float deltaTimeSeconds) {
-	if (g_pendingCameraUpdates.inertiaState.load() == InertiaState::InertiaStart) {
+	if (g_pendingCameraUpdates.angleInertiaState.load() == InertiaState::InertiaStart) {
 		// On the first frame of inertia, we set any pending angleDelta to currentAngleDelta
 		// This ensures that if the user swiped and then lifted their finger, the velocity
 		// of the swipe is taken into account for the inertia.
@@ -94,15 +94,15 @@ static void handleAngleDeltaUpdate(RE::CameraObject* cam, float deltaTimeSeconds
 		// If it was not 0, that means the user swiped again while inertia was ongoing, so we
 		// still need to remove the previous angleDelta value and use the new one.
 		cam->currentAngleDelta = g_pendingCameraUpdates.angleDelta.exchange(0.0f);
-		g_pendingCameraUpdates.inertiaState.store(InertiaState::InInertia);
+		g_pendingCameraUpdates.angleInertiaState.store(InertiaState::InInertia);
 	}
-	else if (g_pendingCameraUpdates.inertiaState.load() == InertiaState::InInertia) {
+	else if (g_pendingCameraUpdates.angleInertiaState.load() == InertiaState::InInertia) {
 		constexpr float inertiaDecayFactor = 10.0f;
 		// multiply by deltaTimeSeconds to make it frame rate independent
 		cam->currentAngleDelta *= 1 - inertiaDecayFactor * deltaTimeSeconds;
 		if (std::abs(cam->currentAngleDelta) < 0.1f) {
 			cam->currentAngleDelta = 0.0f;
-			g_pendingCameraUpdates.inertiaState.store(InertiaState::NotInInertia);
+			g_pendingCameraUpdates.angleInertiaState.store(InertiaState::NotInInertia);
 		}
 	}
 	else {
