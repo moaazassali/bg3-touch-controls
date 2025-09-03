@@ -14,8 +14,9 @@ struct PendingCameraUpdates {
 	std::atomic<float> zoomDelta{ 0.0f };
 	std::atomic<float> xPanDelta{ 0.0f };
 	std::atomic<float> yPanDelta{ 0.0f };
-	std::atomic<float> pitch{ 34.5f }; // make initial value configurable
+	std::atomic<float> pitchDelta{ 0.0f };
 	std::atomic<InertiaState> angleInertiaState{ InertiaState::NotInInertia };
+	std::atomic<InertiaState> pitchInertiaState{ InertiaState::NotInInertia };
 };
 
 extern PendingCameraUpdates g_pendingCameraUpdates;

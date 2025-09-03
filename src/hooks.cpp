@@ -5,6 +5,7 @@
 #include <MinHook.h>
 #include "RE/Camera.h"
 #include "pending_camera_updates.h"
+#include <algorithm>
 
 // Taken from BG3_NativeCameraTweaks:
 // https://github.com/ersh1/BG3_NativeCameraTweaks/blob/876f2da98ede96d3db2884ffd9fb25687ada5ff1/src/Hooks.h
@@ -156,12 +157,42 @@ static void detour_updateCamera(uint64_t a1, uint64_t a2, RE::DeltaTimeObject* a
 // It also gets called in other places but we only care about the one in original_updateCamera.
 // We have to constantly return the desired pitch here because the original calculatePitch function
 // disregards any previous pitch changes and just uses some global values.
+// No need to call original function because it doesn't do any state updates.
+// It just returns a float based on currentPitch and some states/global values.
 static float detour_calculatePitch(RE::CameraObject* a1, uint8_t a2, uint8_t a3)
 {
-	// no need to call original function because it doesn't do any state updates
-	// it just returns a float based on currentPitch and some states/global values
-	// auto pitch = original_calculatePitch(a1, a2, a3);
-	return g_pendingCameraUpdates.pitch.load();
+	// We will use this to update the pitch and keep returning it because it is the value
+	// that we want the pitch to remain at.
+	static float pitch = 34.5f;
+	
+	constexpr float inertiaDecayFactor = 5.0f;
+
+	// We need to update the pitch value based on any pending pitchDelta. This is similar to how we handle
+	// angleDelta but we have to take care of updating the pitch value itself too.
+	if (g_pendingCameraUpdates.pitchInertiaState.load() == InertiaState::InertiaStart) {
+		const auto pitchDelta = g_pendingCameraUpdates.pitchDelta.load();
+		pitch = std::clamp(pitch + pitchDelta, 5.0f, 85.55f);
+		// new pitchDelta based on inertia decay factor
+		// assuming 60fps for now since we don't have deltaTimeSeconds here
+		const auto newPitchDelta = pitchDelta * (1 - inertiaDecayFactor * 0.01667f); 
+		g_pendingCameraUpdates.pitchDelta.store(newPitchDelta);
+		g_pendingCameraUpdates.pitchInertiaState.store(InertiaState::InInertia);
+	}
+	else if (g_pendingCameraUpdates.pitchInertiaState.load() == InertiaState::InInertia) {
+		const auto pitchDelta = g_pendingCameraUpdates.pitchDelta.load();
+		if (std::abs(pitchDelta) < 0.1f) {
+			g_pendingCameraUpdates.pitchDelta.store(0.0f);
+			g_pendingCameraUpdates.pitchInertiaState.store(InertiaState::NotInInertia);
+		}
+		pitch = std::clamp(pitch + pitchDelta, 5.0f, 85.55f);
+		// new pitchDelta based on inertia decay factor
+		const auto newPitchDelta = pitchDelta * (1 - inertiaDecayFactor * 0.01667f);
+		g_pendingCameraUpdates.pitchDelta.store(newPitchDelta);
+	}
+	else {
+		pitch = std::clamp(pitch + g_pendingCameraUpdates.pitchDelta.exchange(0.0f), 5.0f, 85.55f);
+	}
+	return pitch;
 }
 
 // This gets called every frame in original_updateCamera
