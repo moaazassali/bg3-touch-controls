@@ -136,19 +136,46 @@ static void detour_updateCamera(uint64_t a1, uint64_t a2, RE::DeltaTimeObject* a
 
 		handleAngleDeltaUpdate(cam, a3->deltaTimeSeconds);
 
-		// Similar rationale to angleDelta above.
-		cam->zoomDelta = g_pendingCameraUpdates.zoomDelta.exchange(0.0f);
+		const auto xPanDelta = g_pendingCameraUpdates.xPanDelta.exchange(0.0f);
+		const auto yPanDelta = g_pendingCameraUpdates.yPanDelta.exchange(0.0f);
+		const auto zoomDelta = g_pendingCameraUpdates.zoomDelta.exchange(0.0f);
+		const auto isPanningOrZooming = xPanDelta != 0.0f && yPanDelta != 0.0f && zoomDelta != 0.0f;
 
-		// Only disable followPlayer if there is some panning input.
-		// The camera will unexpectedly stop following the player otherwise.
-		// horizontalPanDelta and verticalPanDelta have no effect unless followPlayer is false.
-		if (g_pendingCameraUpdates.xPanDelta.load() != 0.0f || g_pendingCameraUpdates.yPanDelta.load() != 0.0f) {
-			cam->followPlayer = false;
+		if (isPanningOrZooming && cam->followPlayer) {
+			const float PAN_DOMINANCE_FACTOR = 10.0f;
+			const float MIN_PAN_THRESHOLD = 1.5f;
+			const float MIN_ZOOM_THRESHOLD = 0.5f;
+
+			float translationMagnitude = sqrt(
+				xPanDelta * xPanDelta +
+				yPanDelta * yPanDelta
+			);
+			float expansionMagnitude = abs(zoomDelta);
+
+			auto isPanningIntent = false;
+			if (expansionMagnitude < MIN_ZOOM_THRESHOLD && translationMagnitude > MIN_PAN_THRESHOLD) {
+				// Barely any zoom happening, so check if panning is significant enough.
+				isPanningIntent = true;
+			}
+			else if (translationMagnitude > expansionMagnitude * PAN_DOMINANCE_FACTOR) {
+				// Zoom is happening, so check if panning is significantly stronger than zooming.
+				isPanningIntent = true;
+			}
+
+			if (isPanningIntent) {
+				// If we are panning, we disable followPlayer to allow free movement.
+				// If we are zooming only, we keep followPlayer enabled to keep the player centered.
+				cam->followPlayer = false;
+			}
+			else {
+				cam->zoomDelta = zoomDelta;
+			}
 		}
-
-		// invert for natural feel. Add as a config.
-		cam->horizontalPanDelta = -g_pendingCameraUpdates.xPanDelta.exchange(0.0f);
-		cam->verticalPanDelta = -g_pendingCameraUpdates.yPanDelta.exchange(0.0f);
+		else {
+			cam->horizontalPanDelta = xPanDelta;
+			cam->verticalPanDelta = yPanDelta;
+			cam->zoomDelta = zoomDelta;
+		}
 	}
 	original_updateCamera(a1, a2, a3, a4);
 }
@@ -164,7 +191,7 @@ static float detour_calculatePitch(RE::CameraObject* a1, uint8_t a2, uint8_t a3)
 	// We will use this to update the pitch and keep returning it because it is the value
 	// that we want the pitch to remain at.
 	static float pitch = 34.5f;
-	
+
 	constexpr float inertiaDecayFactor = 5.0f;
 
 	// We need to update the pitch value based on any pending pitchDelta. This is similar to how we handle
@@ -174,7 +201,7 @@ static float detour_calculatePitch(RE::CameraObject* a1, uint8_t a2, uint8_t a3)
 		pitch = std::clamp(pitch + pitchDelta, 5.0f, 85.55f);
 		// new pitchDelta based on inertia decay factor
 		// assuming 60fps for now since we don't have deltaTimeSeconds here
-		const auto newPitchDelta = pitchDelta * (1 - inertiaDecayFactor * 0.01667f); 
+		const auto newPitchDelta = pitchDelta * (1 - inertiaDecayFactor * 0.01667f);
 		g_pendingCameraUpdates.pitchDelta.store(newPitchDelta);
 		g_pendingCameraUpdates.pitchInertiaState.store(InertiaState::InInertia);
 	}
