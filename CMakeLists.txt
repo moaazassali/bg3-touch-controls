@@ -38,3 +38,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(minhook)
 target_link_libraries(BG3TouchControls PRIVATE minhook)
+
+# Add SDL2 headers (we are cloning the entire repo just for the headers... should maybe fix)
+FetchContent_Populate(
+	sdl2
+	GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+	GIT_TAG        ba2f78a0069118a6c583f1fbf1420144ffa35bad
+	GIT_SHALLOW    TRUE
+)
+# Your existing target_include_directories call will work perfectly with this
+target_include_directories(BG3TouchControls PUBLIC "${sdl2_SOURCE_DIR}/include")
