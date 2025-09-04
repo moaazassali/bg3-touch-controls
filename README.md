@@ -63,3 +63,7 @@ The issue might be because we are using the last 5 frames to calculate velocity,
 which might include some high delta values from the oldest one or two frames.
 Maybe we sould use a weighted average that gives more weight to the most recent frames?
 Or we could use a smaller number of frames, like 3.
+
+I am not really liking the feel of camera rotation and pitch.
+Both panning and zooming don't have inertia but still feel smoother imo.
+Maybe it's the linear mapping of translation delta to angle/pitch delta that feels off?
