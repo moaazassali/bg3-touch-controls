@@ -26,7 +26,8 @@ static const INTERACTION_CONTEXT_CONFIGURATION config[] = {
 		INTERACTION_ID_MANIPULATION,
 		INTERACTION_CONFIGURATION_FLAG_MANIPULATION |
 		INTERACTION_CONFIGURATION_FLAG_MANIPULATION_TRANSLATION_X |
-		INTERACTION_CONFIGURATION_FLAG_MANIPULATION_TRANSLATION_Y
+		INTERACTION_CONFIGURATION_FLAG_MANIPULATION_TRANSLATION_Y |
+		INTERACTION_CONFIGURATION_FLAG_MANIPULATION_SCALING
 	}
 };
 
@@ -168,18 +169,17 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		if (output->contactCount == 1) {
 			handleAngleDeltaUpdate(output->arguments.manipulation.delta.translationX, output->interactionFlags);
 			handlePitchUpdate(output->arguments.manipulation.delta.translationY, output->interactionFlags);
-
-			// Disabled for now because pitch change on one-finger Y drag feels more natural.
-			// Will probably move this to rely on two-finger pinch zoom later.
-			//constexpr float zoomFactor = 1.0f;
-			//g_pendingCameraUpdates.zoomDelta.fetch_add(output->arguments.manipulation.delta.translationY * zoomFactor);
 		}
 		else if (output->contactCount == 2) {
-			// Two finger manipulation. Use for panning. Make configurable.
-			constexpr float xPanFactor = 1.0f;
+			// Two finger manipulation. Use for panning. Invert for natural feel. Make configurable. 
+			constexpr float xPanFactor = -3.0f;
 			g_pendingCameraUpdates.xPanDelta.fetch_add(output->arguments.manipulation.delta.translationX * xPanFactor);
-			constexpr float yPanFactor = 1.0f;
+			constexpr float yPanFactor = -3.0f;
 			g_pendingCameraUpdates.yPanDelta.fetch_add(output->arguments.manipulation.delta.translationY * yPanFactor);
+
+			// invert for natural feel. Make configurable.
+			constexpr float zoomFactor = -5.0f;
+			g_pendingCameraUpdates.zoomDelta.fetch_add(output->arguments.manipulation.delta.expansion * zoomFactor);
 		}
 		break;
 	}
