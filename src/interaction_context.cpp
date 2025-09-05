@@ -3,6 +3,8 @@
 #include <InteractionContext.h>
 #include "pending_camera_updates.h"
 #include <algorithm>
+#include <SDL.h>
+#include <thread>
 
 extern HINTERACTIONCONTEXT g_hInteractionContext;
 PendingCameraUpdates g_pendingCameraUpdates;
@@ -150,13 +152,84 @@ static void handlePitchUpdate(float rawDelta, INTERACTION_FLAGS interactionFlags
 	prevPitchDeltas[0] = pitchDelta;
 }
 
+
+
+typedef int (*SDL_PushEvent_t)(SDL_Event* event);
+typedef Uint32(*SDL_GetTicks_t)(void);
+typedef SDL_Window* (*SDL_GetKeyboardFocus_t)(void);
+typedef void (*SDL_WarpMouseInWindow_t)(SDL_Window* window, int x, int y);
+
+static void SendMouseClick(int x, int y, Uint8 button)
+{
+	HMODULE sdl_module = GetModuleHandleA("SDL2.dll");
+	if (!sdl_module) {
+		std::cout << "Could not get handle to SDL2.dll" << std::endl;
+		return;
+	}
+	SDL_PushEvent_t pSDL_PushEvent = (SDL_PushEvent_t)GetProcAddress(sdl_module, "SDL_PushEvent");
+	if (!pSDL_PushEvent) {
+		std::cout << "Could not find SDL_PushEvent in SDL2.dll" << std::endl;
+		return;
+	}
+	SDL_GetTicks_t pSDL_GetTicks = (SDL_GetTicks_t)GetProcAddress(sdl_module, "SDL_GetTicks");
+	if (!pSDL_GetTicks) {
+		std::cout << "Could not find SDL_GetTicks in SDL2.dll" << std::endl;
+		return;
+	}
+	SDL_GetKeyboardFocus_t pSDL_GetKeyboardFocus_t = (SDL_GetKeyboardFocus_t)GetProcAddress(sdl_module, "SDL_GetKeyboardFocus");
+	if (!pSDL_GetKeyboardFocus_t) {
+		std::cout << "Could not find SDL_GetKeyboardFocus in SDL2.dll" << std::endl;
+		return;
+	}
+	SDL_WarpMouseInWindow_t pSDL_WarpMouseInWindow = (SDL_WarpMouseInWindow_t)GetProcAddress(sdl_module, "SDL_WarpMouseInWindow");
+	if (!pSDL_WarpMouseInWindow) {
+		std::cout << "Could not find SDL_WarpMouseInWindow in SDL2.dll" << std::endl;
+		return;
+	}
+
+	// Might be able to grab the window in other (better?) ways?
+	SDL_Window* window = pSDL_GetKeyboardFocus_t();
+	// We have to move the mouse to the position of the click first
+	// Otherwise the click won't be registered at the original cursor position
+	pSDL_WarpMouseInWindow(window, x, y);
+
+	SDL_Event event2{};
+	event2.type = SDL_MOUSEBUTTONDOWN;
+	event2.button.x = x;
+	event2.button.y = y;
+	event2.button.button = button;
+	event2.button.state = SDL_PRESSED;
+	event2.button.clicks = 1;
+	event2.button.windowID = 0;
+	event2.button.timestamp = pSDL_GetTicks();
+	pSDL_PushEvent(&event2);
+
+	SDL_Event event3{};
+	event3.type = SDL_MOUSEBUTTONUP;
+	event3.button.x = x;
+	event3.button.y = y;
+	event3.button.button = button;
+	event3.button.state = SDL_RELEASED;
+	event3.button.clicks = 1;
+	event3.button.windowID = 0;
+	event3.button.timestamp = pSDL_GetTicks();
+
+	// We need to remove the hover effect after the click because the cursor stays there
+	// This triggers hover effects in the game like popups and button highlights, which
+	// are annoying if they stay after a tap.
+	// Simply moving the cursor away makes the tap not work anymore though.
+	// pSDL_WarpMouseInWindow(window, 10, 10);
+}
+
 static void CALLBACK interactionContextCallback(void* clientData, const INTERACTION_CONTEXT_OUTPUT2* output) {
-	// print interaction type
+	HWND hwnd = reinterpret_cast<HWND>(clientData);
 	switch (output->interactionId) {
-	case INTERACTION_ID_TAP:
-		//std::cout << "TAP event detected with " << output->arguments.tap.count << " taps and "
-			//<< output->contactCount << " contacts." << std::endl;
+	case INTERACTION_ID_TAP: {
+		POINT clientPt = { static_cast<LONG>(output->x), static_cast<LONG>(output->y) };
+		ScreenToClient(hwnd, &clientPt);
+		SendMouseClick(clientPt.x, clientPt.y, SDL_BUTTON_LEFT);
 		break;
+	}
 	case INTERACTION_ID_HOLD:
 		//std::cout << "HOLD event detected with " << output->contactCount << " contacts." << std::endl;
 		break;
@@ -215,7 +288,7 @@ void initializeInteractionContext(HWND hwnd)
 
 
 		// Register our callback function to receive the events from the Interaction Context
-		hResult = RegisterOutputCallbackInteractionContext2(g_hInteractionContext, interactionContextCallback, nullptr);
+		hResult = RegisterOutputCallbackInteractionContext2(g_hInteractionContext, interactionContextCallback, hwnd);
 		if FAILED(hResult) {
 			std::cout
 				<< "FAILURE: Could not register interaction context output callback. HRESULT: "
