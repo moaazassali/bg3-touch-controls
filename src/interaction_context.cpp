@@ -157,7 +157,8 @@ static void handlePitchUpdate(float rawDelta, INTERACTION_FLAGS interactionFlags
 typedef int (*SDL_PushEvent_t)(SDL_Event* event);
 typedef Uint32(*SDL_GetTicks_t)(void);
 typedef SDL_Window* (*SDL_GetKeyboardFocus_t)(void);
-typedef void (*SDL_WarpMouseInWindow_t)(SDL_Window* window, int x, int y);
+//typedef void (*SDL_WarpMouseInWindow_t)(SDL_Window* window, int x, int y);
+typedef Uint32(*SDL_GetWindowID_t)(SDL_Window* window);
 
 static void SendMouseClick(int x, int y, Uint8 button)
 {
@@ -181,44 +182,44 @@ static void SendMouseClick(int x, int y, Uint8 button)
 		std::cout << "Could not find SDL_GetKeyboardFocus in SDL2.dll" << std::endl;
 		return;
 	}
-	SDL_WarpMouseInWindow_t pSDL_WarpMouseInWindow = (SDL_WarpMouseInWindow_t)GetProcAddress(sdl_module, "SDL_WarpMouseInWindow");
-	if (!pSDL_WarpMouseInWindow) {
-		std::cout << "Could not find SDL_WarpMouseInWindow in SDL2.dll" << std::endl;
+	SDL_GetWindowID_t pSDL_GetWindowID = (SDL_GetWindowID_t)GetProcAddress(sdl_module, "SDL_GetWindowID");
+	if (!pSDL_GetWindowID) {
+		std::cout << "Could not find SDL_GetWindowID in SDL2.dll" << std::endl;
 		return;
 	}
 
 	// Might be able to grab the window in other (better?) ways?
 	SDL_Window* window = pSDL_GetKeyboardFocus_t();
-	// We have to move the mouse to the position of the click first
-	// Otherwise the click won't be registered at the original cursor position
-	pSDL_WarpMouseInWindow(window, x, y);
 
+	SDL_Event event1{};
+	event1.type = SDL_MOUSEMOTION;
+	event1.motion.x = x;
+	event1.motion.y = y;
+	event1.motion.xrel = 0; // could base this off the in-game global cursor position if needed
+	event1.motion.yrel = 0;
+	event1.motion.state = 0;
+	event1.motion.timestamp = pSDL_GetTicks();
+	event1.motion.windowID = pSDL_GetWindowID(window);
+	pSDL_PushEvent(&event1);
+
+	// send mouse down and up events
 	SDL_Event event2{};
 	event2.type = SDL_MOUSEBUTTONDOWN;
-	event2.button.x = x;
-	event2.button.y = y;
 	event2.button.button = button;
 	event2.button.state = SDL_PRESSED;
 	event2.button.clicks = 1;
-	event2.button.windowID = 0;
+	event2.button.windowID = pSDL_GetWindowID(window);
 	event2.button.timestamp = pSDL_GetTicks();
 	pSDL_PushEvent(&event2);
 
 	SDL_Event event3{};
 	event3.type = SDL_MOUSEBUTTONUP;
-	event3.button.x = x;
-	event3.button.y = y;
 	event3.button.button = button;
 	event3.button.state = SDL_RELEASED;
 	event3.button.clicks = 1;
-	event3.button.windowID = 0;
+	event3.button.windowID = pSDL_GetWindowID(window);
 	event3.button.timestamp = pSDL_GetTicks();
-
-	// We need to remove the hover effect after the click because the cursor stays there
-	// This triggers hover effects in the game like popups and button highlights, which
-	// are annoying if they stay after a tap.
-	// Simply moving the cursor away makes the tap not work anymore though.
-	// pSDL_WarpMouseInWindow(window, 10, 10);
+	pSDL_PushEvent(&event3);
 }
 
 static void CALLBACK interactionContextCallback(void* clientData, const INTERACTION_CONTEXT_OUTPUT2* output) {
