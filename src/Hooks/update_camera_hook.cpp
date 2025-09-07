@@ -3,8 +3,9 @@
 
 #include "RE/Camera.h"
 #include "pending_camera_updates.h"
-#include "Hooks/update_camera_hook.h"
 #include "Hooks/hooks_utils.h"
+#include "Hooks/update_camera_hook.h"
+#include "Hooks/calculate_pitch_hook.h"
 
 updateCamera_t original_updateCamera = nullptr;
 
