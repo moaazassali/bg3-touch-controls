@@ -3,9 +3,10 @@
 #include <Psapi.h>
 #include <vector>
 #include <MinHook.h>
-#include "RE/Camera.h"
-#include "pending_camera_updates.h"
+#include <RE/Camera.h>
+#include <pending_camera_updates.h>
 #include <algorithm>
+#include <Hooks/hooks_utils.h>
 
 // Taken from BG3_NativeCameraTweaks:
 // https://github.com/ersh1/BG3_NativeCameraTweaks/blob/876f2da98ede96d3db2884ffd9fb25687ada5ff1/src/Hooks.h
@@ -20,68 +21,6 @@ getCameraDefinition_t original_getCameraDefinition = nullptr;
 
 using updateCameraPitch_t = void(*)(uint64_t a1, uint64_t a2, RE::CameraObject* a3, RE::DeltaTimeObject* a4);
 updateCameraPitch_t original_updateCameraPitch = nullptr;
-
-// Simple pattern scanner created by an LLM
-static uintptr_t findPattern(const char* pattern, uintptr_t start, uintptr_t end)
-{
-	std::vector<int> bytes;
-	const char* p = pattern;
-	while (*p)
-	{
-		if (*p == ' ')
-		{
-			p++;
-			continue;
-		}
-		if (*p == '?')
-		{
-			bytes.push_back(-1); // Wildcard
-			p += 2;
-		}
-		else
-		{
-			char byte[3] = { *p, *(p + 1), 0 };
-			bytes.push_back(strtol(byte, nullptr, 16));
-			p += 2;
-		}
-	}
-
-	for (uintptr_t i = start; i < end - bytes.size(); ++i)
-	{
-		bool found = true;
-		for (size_t j = 0; j < bytes.size(); ++j)
-		{
-			if (bytes[j] != -1 && *(uint8_t*)(i + j) != bytes[j])
-			{
-				found = false;
-				break;
-			}
-		}
-		if (found)
-			return i;
-	}
-	return 0;
-}
-
-// Helper to get module range created by an LLM
-static bool getModuleRange(uintptr_t& start, uintptr_t& end)
-{
-	HMODULE hModule = GetModuleHandle(NULL);
-	if (!hModule) {
-		std::cout << "GetModuleHandle failed." << std::endl;
-		return false;
-	}
-
-	MODULEINFO moduleInfo;
-	if (!GetModuleInformation(GetCurrentProcess(), hModule, &moduleInfo, sizeof(MODULEINFO))) {
-		std::cout << "GetModuleInformation failed." << std::endl;
-		return false;
-	}
-
-	start = reinterpret_cast<uintptr_t>(hModule);
-	end = start + moduleInfo.SizeOfImage;
-	return true;
-}
 
 static void handleAngleDeltaUpdate(RE::CameraObject* cam, float deltaTimeSeconds) {
 	if (g_pendingCameraUpdates.angleInertiaState.load() == InertiaState::InertiaStart) {
@@ -246,23 +185,6 @@ static void detour_updateCameraPitch(uint64_t a1, uint64_t a2, RE::CameraObject*
 	}
 	else original_updateCameraPitch(a1, a2, a3, a4);
 }
-
-static bool installHook(LPVOID pTarget, LPVOID pDetour, LPVOID* ppOriginal, const char* hookName)
-{
-	if (MH_CreateHook(pTarget, pDetour, ppOriginal) != MH_OK)
-	{
-		std::cout << "Failed to create " << hookName << " hook." << std::endl;
-		return false;
-	}
-	if (MH_EnableHook(pTarget) != MH_OK)
-	{
-		printf("Failed to enable %s hook\n", hookName);
-		return false;
-	}
-	std::cout << hookName << " hook installed successfully." << std::endl;
-	return true;
-}
-
 
 void installHooks()
 {
