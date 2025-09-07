@@ -247,6 +247,23 @@ static void detour_updateCameraPitch(uint64_t a1, uint64_t a2, RE::CameraObject*
 	else original_updateCameraPitch(a1, a2, a3, a4);
 }
 
+static bool installHook(LPVOID pTarget, LPVOID pDetour, LPVOID* ppOriginal, const char* hookName)
+{
+	if (MH_CreateHook(pTarget, pDetour, ppOriginal) != MH_OK)
+	{
+		std::cout << "Failed to create " << hookName << " hook." << std::endl;
+		return false;
+	}
+	if (MH_EnableHook(pTarget) != MH_OK)
+	{
+		printf("Failed to enable %s hook\n", hookName);
+		return false;
+	}
+	std::cout << hookName << " hook installed successfully." << std::endl;
+	return true;
+}
+
+
 void installHooks()
 {
 	if (MH_Initialize() != MH_OK) {
@@ -254,11 +271,12 @@ void installHooks()
 		return;
 	}
 
+	bool success = true;
+
 	uintptr_t start, end;
-	if (!getModuleRange(start, end)) {
-		MH_Uninitialize();
-		return;
-	}
+	success &= getModuleRange(start, end);
+
+
 	uintptr_t callAddr = findPattern(
 		"E8 ?? ?? ?? ?? 48 8D 8D F8 04 00 00 E8 ?? ?? ?? ?? E9 AF FD FF FF",
 		start,
@@ -267,22 +285,8 @@ void installHooks()
 	// Calculate the target function address from the CALL instruction
 	int32_t relativeOffset = *reinterpret_cast<int32_t*>(callAddr + 1);
 	uintptr_t targetAddr = callAddr + 5 + relativeOffset;
+	success &= installHook((void*)targetAddr, &detour_updateCamera, (void**)&original_updateCamera, "updateCamera");
 
-	if (MH_CreateHook((void*)targetAddr, &detour_updateCamera, (void**)&original_updateCamera) != MH_OK)
-	{
-		std::cout << "Failed to create hook." << std::endl;
-		MH_Uninitialize();
-		return;
-	}
-
-	if (MH_EnableHook((void*)targetAddr) != MH_OK)
-	{
-		printf("Failed to enable hook\n");
-		MH_Uninitialize();
-		return;
-	}
-
-	std::cout << "UpdateCamera hook installed successfully." << std::endl;
 
 	callAddr = findPattern(
 		"E8 ?? ?? ?? ?? 80 BF 4C 01 00 00 00",
@@ -291,19 +295,8 @@ void installHooks()
 	);
 	relativeOffset = *reinterpret_cast<int32_t*>(callAddr + 1);
 	targetAddr = callAddr + 5 + relativeOffset;
-	if (MH_CreateHook((void*)targetAddr, &detour_calculatePitch, (void**)&original_calculatePitch) != MH_OK)
-	{
-		std::cout << "Failed to create calculatePitch hook." << std::endl;
-		MH_Uninitialize();
-		return;
-	}
-	if (MH_EnableHook((void*)targetAddr) != MH_OK)
-	{
-		printf("Failed to enable calculatePitch hook\n");
-		MH_Uninitialize();
-		return;
-	}
-	std::cout << "calculatePitch hook installed successfully." << std::endl;
+	success &= installHook((void*)targetAddr, &detour_calculatePitch, (void**)&original_calculatePitch, "calculatePitch");
+
 
 	callAddr = findPattern(
 		"48 8B 05 ?? ?? ?? ?? 80 B8 32 13 00 00 00 74 07",
@@ -311,7 +304,8 @@ void installHooks()
 		end
 	);
 	original_getCameraDefinition = reinterpret_cast<getCameraDefinition_t>(callAddr);
-	std::cout << "getCameraDefinition hook installed successfully." << std::endl;
+	std::cout << "getCameraDefinition found successfully." << std::endl;
+
 
 	callAddr = findPattern(
 		"E8 ?? ?? ?? ?? 48 8B 46 70 4C 8D 45 90 0F 28 46 30",
@@ -320,16 +314,14 @@ void installHooks()
 	);
 	relativeOffset = *reinterpret_cast<int32_t*>(callAddr + 1);
 	targetAddr = callAddr + 5 + relativeOffset;
-	if (MH_CreateHook((void*)targetAddr, &detour_updateCameraPitch, (void**)&original_updateCameraPitch) != MH_OK)
-	{
-		std::cout << "Failed to create updateCameraPitch hook." << std::endl;
-		MH_Uninitialize();
-		return;
+	success &= installHook((void*)targetAddr, &detour_updateCameraPitch, (void**)&original_updateCameraPitch, "updateCameraPitch");
+
+
+	if (success) {
+		std::cout << "All hooks installed successfully." << std::endl;
 	}
-	if (MH_EnableHook((void*)targetAddr) != MH_OK) {
-		printf("Failed to enable updateCameraPitch hook\n");
+	else {
+		std::cout << "Some hooks failed to install." << std::endl;
 		MH_Uninitialize();
-		return;
 	}
-	std::cout << "updateCameraPitch hook installed successfully." << std::endl;
 }
