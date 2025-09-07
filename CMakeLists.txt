@@ -21,7 +21,8 @@ add_library (BG3TouchControls SHARED
 	"src/custom_wnd_proc.cpp"
 	"src/interaction_context.cpp"
 	"src/hooks.cpp"
-	"src/Hooks/hooks_utils.cpp")
+	"src/Hooks/hooks_utils.cpp"
+	"src/Hooks/update_camera_hook.cpp")
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
 
