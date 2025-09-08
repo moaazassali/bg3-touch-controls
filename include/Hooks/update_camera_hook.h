@@ -1,4 +1,8 @@
 #pragma once
+#include <cstdint>
+
+#include "RE/Camera.h"
+
 
 // Adapted from BG3_NativeCameraTweaks:
 // https://github.com/ersh1/BG3_NativeCameraTweaks/blob/876f2da98ede96d3db2884ffd9fb25687ada5ff1/src/Hooks.h

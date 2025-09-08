@@ -1,14 +1,9 @@
-#include <windows.h>
-#include <iostream>
-#include <Psapi.h>
-#include <vector>
-#include <MinHook.h>
 #include <algorithm>
 
 #include "RE/Camera.h"
 #include "pending_camera_updates.h"
-#include "Hooks/calculate_pitch_hook.h"
 #include "Hooks/hooks_utils.h"
+#include "Hooks/calculate_pitch_hook.h"
 
 
 calculatePitch_t original_calculatePitch = nullptr;

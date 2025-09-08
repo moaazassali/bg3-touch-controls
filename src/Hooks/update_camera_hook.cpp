@@ -1,13 +1,13 @@
-#include <windows.h>
 #include <iostream>
 
 #include "RE/Camera.h"
 #include "pending_camera_updates.h"
 #include "Hooks/hooks_utils.h"
 #include "Hooks/update_camera_hook.h"
-#include "Hooks/calculate_pitch_hook.h"
+
 
 updateCamera_t original_updateCamera = nullptr;
+
 
 static void handleAngleDeltaUpdate(RE::CameraObject* cam, float deltaTimeSeconds) {
 	if (g_pendingCameraUpdates.angleInertiaState.load() == InertiaState::InertiaStart) {

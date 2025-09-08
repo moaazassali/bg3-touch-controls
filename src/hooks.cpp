@@ -1,16 +1,12 @@
-#include <windows.h>
 #include <iostream>
-#include <Psapi.h>
 #include <vector>
 #include <MinHook.h>
-#include <algorithm>
 
 #include "RE/Camera.h"
 #include "pending_camera_updates.h"
 #include "Hooks/hooks_utils.h"
 #include "Hooks/update_camera_hook.h"
 #include "Hooks/calculate_pitch_hook.h"
-
 
 using getCameraDefinition_t = RE::CameraDefinition* (*)(RE::CameraObject* a1);
 getCameraDefinition_t original_getCameraDefinition = nullptr;
@@ -56,6 +52,7 @@ void installHooks()
 	success &= getModuleRange(start, end);
 	success &= installUpdateCameraHook(start, end);
 	success &= installCalculatePitchHook(start, end);
+	//success &= installUpdateCameraPitchHook(start, end);
 
 
 	auto callAddr = findPattern(

@@ -1,8 +1,11 @@
+#include <windows.h> // needed so we don't get 'GetModuleInformation undefined' error
 #include <vector>
-#include <MinHook.h>
-#include <Psapi.h>
 #include <iostream>
-#include <Hooks/hooks_utils.h>
+#include <psapi.h>
+#include <MinHook.h>
+
+#include "Hooks/hooks_utils.h"
+
 
 // Simple pattern scanner created by an LLM
 uintptr_t findPattern(const char* pattern, uintptr_t start, uintptr_t end)
