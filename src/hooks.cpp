@@ -9,6 +9,7 @@
 #include "Hooks/calculate_pitch_hook.h"
 #include "Hooks/update_camera_pitch_hook.h"
 #include "Hooks/process_input_hook.h"
+#include "Hooks/get_raw_action_buffer_hook.h"
 
 
 void installHooks()
@@ -26,6 +27,7 @@ void installHooks()
 	success &= installCalculatePitchHook(start, end);
 	success &= installUpdateCameraPitchHook(start, end);
 	success &= installProcessInputHook(start, end);
+	success &= installGetRawActionBufferHook(start, end);
 
 	if (success) {
 		std::cout << "All hooks installed successfully." << std::endl;

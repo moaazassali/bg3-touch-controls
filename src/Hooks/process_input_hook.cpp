@@ -4,7 +4,10 @@
 
 processInput_t original_processInput = nullptr;
 
-
+// This is called every frame to handle input
+// a1 is a pretty big "InputManager" struct, which holds a lot of states, queues, etc...
+// It process the input events and dispatches a set of predefined actions
+// These actions can be mined from the game exe as they are associated with string literals
 static void detour_processInput(void* a1, uint64_t a2)
 {
 	original_processInput(a1, a2);
