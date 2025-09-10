@@ -2,13 +2,15 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "RE/action.h"
+
 
 // This is the struct used by the game to add actions to the game's
 // temporary action buffers before processing as well as the final buffer
 // to actually trigger the actions in-game.
 // The game creates these action requests in the processInput() function.
 struct ActionRequest {
-	void* pAction;
+	Action* action;
 	uint8_t playerIndex;
 	std::byte _pad_009[3];
 	uint32_t actionId;

@@ -27,6 +27,7 @@ add_library (BG3TouchControls SHARED
 	"src/Hooks/update_camera_pitch_hook.cpp"
 	"src/Hooks/process_input_hook.cpp"
 	"src/Hooks/get_action_requests_buffer_hook.cpp"
+	"src/RE/action_map.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
