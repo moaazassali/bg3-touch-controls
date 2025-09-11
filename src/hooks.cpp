@@ -10,6 +10,7 @@
 #include "Hooks/update_camera_pitch_hook.h"
 #include "Hooks/process_input_hook.h"
 #include "Hooks/get_action_requests_buffer_hook.h"
+#include "Hooks/push_to_action_requests_queue_hook.h"
 
 
 void installHooks()
@@ -28,6 +29,7 @@ void installHooks()
 	success &= installUpdateCameraPitchHook(start, end);
 	success &= installProcessInputHook(start, end);
 	success &= installGetActionRequestsBufferHook(start, end);
+	success &= installPushToActionRequestsQueueHook(start, end);
 
 	if (success) {
 		std::cout << "All hooks installed successfully." << std::endl;
