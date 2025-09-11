@@ -28,6 +28,7 @@ add_library (BG3TouchControls SHARED
 	"src/Hooks/process_input_hook.cpp"
 	"src/Hooks/get_action_requests_buffer_hook.cpp"
 	"src/Hooks/push_to_action_requests_queue_hook.cpp"
+	"src/Hooks/process_action_requests_queue_hook.cpp"
 	"src/RE/action_map.cpp"
 )
 
