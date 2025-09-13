@@ -1,4 +1,4 @@
-#include "Hooks/hooks_utils.h"
+#include "game_bindings.h"
 #include "Hooks/process_input_hook.h"
 #include "RE/InputManager.h"
 

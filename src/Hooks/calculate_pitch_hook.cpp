@@ -2,7 +2,7 @@
 
 #include "RE/Camera.h"
 #include "pending_camera_updates.h"
-#include "Hooks/hooks_utils.h"
+#include "game_bindings.h"
 #include "Hooks/calculate_pitch_hook.h"
 
 

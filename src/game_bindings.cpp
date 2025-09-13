@@ -1,14 +1,16 @@
-#include <iostream>
+#include <windows.h> // needed so we don't get 'GetModuleInformation undefined' error
 #include <vector>
+#include <iostream>
+#include <psapi.h>
 #include <MinHook.h>
 
 #include "game_bindings.h"
 #include "reverse/functions.h"
 
 
-reverse::getActionRequestsBuffer_t original_getActionRequestsBuffer = nullptr;
-reverse::pushToActionRequestsQueue_t original_pushToActionRequestsQueue = nullptr;
-reverse::processActionRequestsQueue_t original_processActionRequestsQueue = nullptr;
+//reverse::getActionRequestsBuffer_t original_getActionRequestsBuffer = nullptr;
+//reverse::pushToActionRequestsQueue_t original_pushToActionRequestsQueue = nullptr;
+//reverse::processActionRequestsQueue_t original_processActionRequestsQueue = nullptr;
 
 
 // Simple pattern scanner created by an LLM
@@ -91,9 +93,9 @@ bool installHook(LPVOID pTarget, LPVOID pDetour, LPVOID* ppOriginal, const char*
 
 static void initializeFunctionPointers(uintptr_t start, uintptr_t end)
 {
-	original_getActionRequestsBuffer = start + reverse::offset_getActionRequestsBuffer;
-	original_pushToActionRequestsQueue = start + reverse::offset_pushToActionRequestsQueue;
-	original_processActionRequestsQueue = start + reverse::offset_processActionRequestsQueue;
+	//original_getActionRequestsBuffer = (reverse::getActionRequestsBuffer_t)(start + reverse::offset_getActionRequestsBuffer);
+	//original_pushToActionRequestsQueue = (reverse::pushToActionRequestsQueue_t)(start + reverse::offset_pushToActionRequestsQueue);
+	//original_processActionRequestsQueue = (reverse::processActionRequestsQueue_t)(start + reverse::offset_processActionRequestsQueue);
 }
 
 

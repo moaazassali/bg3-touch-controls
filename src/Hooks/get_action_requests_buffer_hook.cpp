@@ -1,4 +1,4 @@
-#include "Hooks/hooks_utils.h"
+#include "game_bindings.h"
 #include "Hooks/get_action_requests_buffer_hook.h"
 
 
