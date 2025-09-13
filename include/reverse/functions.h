@@ -10,19 +10,19 @@ namespace reverse {
 	// Adapted from BG3_NativeCameraTweaks:
 	// https://github.com/ersh1/BG3_NativeCameraTweaks/blob/876f2da98ede96d3db2884ffd9fb25687ada5ff1/src/Hooks.h
 	using updateCamera_t = void(*)(uint64_t a1, uint64_t a2, RE::DeltaTimeObject* a3, RE::UnkObject* a4);
-	const char* pattern_updateCamera = "E8 ?? ?? ?? ?? 48 8D 8D F8 04 00 00 E8 ?? ?? ?? ?? E9 AF FD FF FF";
+	constexpr const char* pattern_updateCamera = "E8 ?? ?? ?? ?? 48 8D 8D F8 04 00 00 E8 ?? ?? ?? ?? E9 AF FD FF FF";
 
 	// Adapted from BG3_NativeCameraTweaks
 	using calculatePitch_t = float(*)(RE::CameraObject* a1, uint8_t a2, uint8_t a3);
-	const char* pattern_calculatePitch = "E8 ?? ?? ?? ?? 80 BF 4C 01 00 00 00";
+	constexpr const char* pattern_calculatePitch = "E8 ?? ?? ?? ?? 80 BF 4C 01 00 00 00";
 
 	// Adapted from BG3_NativeCameraTweaks
 	using getCameraDefinition_t = RE::CameraDefinition* (*)(RE::CameraObject* a1);
-	const char* pattern_getCameraDefinition = "48 8B 05 ?? ?? ?? ?? 80 B8 32 13 00 00 00 74 07";
+	constexpr const char* pattern_getCameraDefinition = "48 8B 05 ?? ?? ?? ?? 80 B8 32 13 00 00 00 74 07";
 
 	// Adapted from BG3_NativeCameraTweaks
 	using updateCameraPitch_t = void(*)(uint64_t a1, uint64_t a2, RE::CameraObject* a3, RE::DeltaTimeObject* a4);
-	const char* pattern_updateCameraPitch = "E8 ?? ?? ?? ?? 48 8B 46 70 4C 8D 45 90 0F 28 46 30";
+	constexpr const char* pattern_updateCameraPitch = "E8 ?? ?? ?? ?? 48 8B 46 70 4C 8D 45 90 0F 28 46 30";
 
 
 	// This is called every frame to handle input
@@ -30,7 +30,7 @@ namespace reverse {
 	// It process the input events and dispatches a set of predefined actions
 	// These actions can be mined from the game exe as they are associated with string literals
 	using processInput_t = void(*)(InputManager* a1, uint64_t a2);
-	const uintptr_t offset_processInput = 0x40C2CC0;
+	constexpr const uintptr_t offset_processInput = 0x40C2CC0;
 
 	// This function retrieves the raw action buffer that holds all actions that are mapped to the
 	// input provided by the player.
@@ -43,12 +43,12 @@ namespace reverse {
 	// a2 is the current game "context" which is used for local co-op.
 	// 0 = player 1 (i.e. when playing solo or as the first player in local co-op)
 	using getActionRequestsBuffer_t = void* (*)(void* a1, uint8_t* a2);
-	const uintptr_t offset_getActionRequestsBuffer = 0x40C79E0;
+	constexpr const uintptr_t offset_getActionRequestsBuffer = 0x40C79E0;
 
 	// This takes a queue from the action requests buffer retrieved via getActionRequestsBuffer
 	// and pushes a new action request to it.
 	using pushToActionRequestsQueue_t = ActionRequest * (*)(void* a1, ActionRequest* a2);
-	const uintptr_t offset_pushToActionRequestsQueue = 0x121C460;
+	constexpr const uintptr_t offset_pushToActionRequestsQueue = 0x121C460;
 
 	// This takes a queue range from the action requests buffer retrieved via getActionRequestsBuffer
 	// and processes all action requests in it.
@@ -57,5 +57,5 @@ namespace reverse {
 	// a2 is a struct that this method fills out.
 	// a3 is a struct that holds two pointers to the start and end of the action requests queue.
 	using processActionRequestsQueue_t = void* (*)(InputManager* a1, void* a2, void* a3, uint8_t a4);
-	const uintptr_t offset_processActionRequestsQueue = 0x40C41C0;
+	constexpr const uintptr_t offset_processActionRequestsQueue = 0x40C41C0;
 }
