@@ -2,7 +2,7 @@
 #include <cstdint>
 
 #include "RE/Camera.h"
-#include "RE/InputManager.h"
+#include "reverse/input_manager.h"
 #include "RE/ActionRequest.h"
 
 
