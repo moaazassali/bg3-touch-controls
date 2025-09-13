@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "RE/Camera.h"
+#include "reverse/Camera.h"
 #include "pending_camera_updates.h"
 #include "game_bindings.h"
 #include "reverse/functions.h"
@@ -9,7 +9,7 @@
 reverse::updateCamera_t original_updateCamera = nullptr;
 
 
-static void handleAngleDeltaUpdate(RE::CameraObject* cam, float deltaTimeSeconds) {
+static void handleAngleDeltaUpdate(reverse::CameraObject* cam, float deltaTimeSeconds) {
 	if (g_pendingCameraUpdates.angleInertiaState.load() == InertiaState::InertiaStart) {
 		// On the first frame of inertia, we set any pending angleDelta to currentAngleDelta
 		// This ensures that if the user swiped and then lifted their finger, the velocity
@@ -49,7 +49,7 @@ static void handleAngleDeltaUpdate(RE::CameraObject* cam, float deltaTimeSeconds
 
 
 // Based on manual testing, this is called on every frame and is tied to the frame rate.
-static void detour_updateCamera(uint64_t a1, uint64_t a2, RE::DeltaTimeObject* a3, RE::UnkObject* a4)
+static void detour_updateCamera(uint64_t a1, uint64_t a2, reverse::DeltaTimeObject* a3, reverse::UnkObject* a4)
 {
 	// There are two CameraObject pointers in UnkObject. Only currentCameraObject seems to work.
 	// Updating desiredCameraObject2 doesn't seem to have any effect.

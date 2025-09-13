@@ -1,6 +1,6 @@
 #include <algorithm>
 
-#include "RE/Camera.h"
+#include "reverse/Camera.h"
 #include "pending_camera_updates.h"
 #include "game_bindings.h"
 #include "reverse/functions.h"
@@ -15,7 +15,7 @@ reverse::calculatePitch_t original_calculatePitch = nullptr;
 // disregards any previous pitch changes and just uses some global values.
 // No need to call original function because it doesn't do any state updates.
 // It just returns a float based on currentPitch and some states/global values.
-static float detour_calculatePitch(RE::CameraObject* a1, uint8_t a2, uint8_t a3)
+static float detour_calculatePitch(reverse::CameraObject* a1, uint8_t a2, uint8_t a3)
 {
 	// We will use this to update the pitch and keep returning it because it is the value
 	// that we want the pitch to remain at.
