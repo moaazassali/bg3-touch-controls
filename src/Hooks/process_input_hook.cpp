@@ -1,9 +1,9 @@
 #include "game_bindings.h"
-#include "Hooks/process_input_hook.h"
+#include "reverse/functions.h"
 #include "RE/InputManager.h"
 
 
-processInput_t original_processInput = nullptr;
+reverse::processInput_t original_processInput = nullptr;
 InputManager* g_inputManager = nullptr;
 
 

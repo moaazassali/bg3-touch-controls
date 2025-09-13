@@ -3,10 +3,10 @@
 #include "RE/Camera.h"
 #include "pending_camera_updates.h"
 #include "game_bindings.h"
-#include "Hooks/calculate_pitch_hook.h"
+#include "reverse/functions.h"
 
 
-calculatePitch_t original_calculatePitch = nullptr;
+reverse::calculatePitch_t original_calculatePitch = nullptr;
 
 
 // This gets called every time in original_updateCamera when the camera.

@@ -20,14 +20,11 @@ add_library (BG3TouchControls SHARED
 	"src/setup_thread.cpp"
 	"src/custom_wnd_proc.cpp"
 	"src/interaction_context.cpp"
-	"src/hooks.cpp"
+	
 	"src/Hooks/update_camera_hook.cpp"
 	"src/Hooks/calculate_pitch_hook.cpp"
 	"src/Hooks/update_camera_pitch_hook.cpp"
 	"src/Hooks/process_input_hook.cpp"
-	"src/Hooks/get_action_requests_buffer_hook.cpp"
-	"src/Hooks/push_to_action_requests_queue_hook.cpp"
-	"src/Hooks/process_action_requests_queue_hook.cpp"
 	"src/RE/action_map.cpp"
 	"src/game_bindings.cpp"
 )

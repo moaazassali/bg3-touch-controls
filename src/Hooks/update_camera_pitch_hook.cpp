@@ -2,11 +2,11 @@
 
 #include "RE/Camera.h"
 #include "game_bindings.h"
-#include "Hooks/update_camera_pitch_hook.h"
+#include "reverse/functions.h"
 
 
-updateCameraPitch_t original_updateCameraPitch = nullptr;
-getCameraDefinition_t original_getCameraDefinition = nullptr;
+reverse::updateCameraPitch_t original_updateCameraPitch = nullptr;
+reverse::getCameraDefinition_t original_getCameraDefinition = nullptr;
 
 
 // This gets called every frame in original_updateCamera
@@ -46,7 +46,7 @@ bool installUpdateCameraPitchHook(uintptr_t start, uintptr_t end)
 		std::cout << "Failed to find call pattern for getCameraDefinition." << std::endl;
 		return false;
 	}
-	original_getCameraDefinition = reinterpret_cast<getCameraDefinition_t>(callAddr);
+	original_getCameraDefinition = reinterpret_cast<reverse::getCameraDefinition_t>(callAddr);
 	std::cout << "getCameraDefinition found successfully." << std::endl;
 
 	callAddr = findPattern(

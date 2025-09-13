@@ -3,10 +3,10 @@
 #include "RE/Camera.h"
 #include "pending_camera_updates.h"
 #include "game_bindings.h"
-#include "Hooks/update_camera_hook.h"
+#include "reverse/functions.h"
 
 
-updateCamera_t original_updateCamera = nullptr;
+reverse::updateCamera_t original_updateCamera = nullptr;
 
 
 static void handleAngleDeltaUpdate(RE::CameraObject* cam, float deltaTimeSeconds) {
