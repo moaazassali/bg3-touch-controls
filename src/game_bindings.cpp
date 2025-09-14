@@ -101,11 +101,6 @@ static void initializeFunctionPointers(uintptr_t start, uintptr_t end)
 
 static void installHooks(uintptr_t start, uintptr_t end)
 {
-	if (MH_Initialize() != MH_OK) {
-		std::cout << "Failed to initialize MinHook." << std::endl;
-		return;
-	}
-
 	bool success = true;
 	success &= installUpdateCameraHook(start, end);
 	success &= installCalculatePitchHook(start, end);

@@ -7,6 +7,7 @@
 
 #include "sdl_bindings/sdl_bindings.h"
 #include "game_bindings.h"
+#include <MinHook.h>
 
 LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void initializeInteractionContext(HWND hwnd);
@@ -75,7 +76,11 @@ static void subclassGameWindow(HWND hwnd)
 DWORD WINAPI setupThread(LPVOID lpParam)
 {
 	createConsole();
-	bindToSDL();
+	if (MH_Initialize() != MH_OK) {
+		std::cout << "Failed to initialize MinHook." << std::endl;
+		return 0;
+	}
+	sdl_bindings::bindToSDL();
 	HWND hGameWnd = findMainWindowForCurrentProcess();
 	subclassGameWindow(hGameWnd);
 	initializeInteractionContext(hGameWnd);
