@@ -1,13 +1,18 @@
 #include <windows.h>
 #include <iostream>
 #include <InteractionContext.h>
-#include "pending_camera_updates.h"
 #include <algorithm>
 #include <SDL.h>
 #include <thread>
 
+
+#include "pending_camera_updates.h"
+#include "sdl_bindings/sdl_bindings.h"
+
+
 extern HINTERACTIONCONTEXT g_hInteractionContext;
 PendingCameraUpdates g_pendingCameraUpdates;
+
 
 // https://learn.microsoft.com/en-us/windows/win32/api/interactioncontext/ne-interactioncontext-interaction_id
 // https://learn.microsoft.com/en-us/windows/win32/api/interactioncontext/ne-interactioncontext-interaction_configuration_flags
@@ -32,6 +37,7 @@ static const INTERACTION_CONTEXT_CONFIGURATION config[] = {
 		INTERACTION_CONFIGURATION_FLAG_MANIPULATION_SCALING
 	}
 };
+
 
 // store last 5 translationX deltas to smooth out the inertia start
 float lastFiveAngleDeltas[5] = { 0.0f };
@@ -94,6 +100,7 @@ static void handleAngleDeltaUpdate(const float rawDelta, const INTERACTION_FLAGS
 	lastFiveAngleDeltas[0] = angleDelta;
 }
 
+
 const auto prevDeltasCount = 7;
 const auto numberOfDeltasForInertiaInitialDelta = 3;
 float prevPitchDeltas[prevDeltasCount] = { 0.0f };
@@ -153,82 +160,14 @@ static void handlePitchUpdate(float rawDelta, INTERACTION_FLAGS interactionFlags
 }
 
 
-
-typedef int (*SDL_PushEvent_t)(SDL_Event* event);
-typedef Uint32(*SDL_GetTicks_t)(void);
-typedef SDL_Window* (*SDL_GetKeyboardFocus_t)(void);
-//typedef void (*SDL_WarpMouseInWindow_t)(SDL_Window* window, int x, int y);
-typedef Uint32(*SDL_GetWindowID_t)(SDL_Window* window);
-
-static void SendMouseClick(int x, int y, Uint8 button)
-{
-	HMODULE sdl_module = GetModuleHandleA("SDL2.dll");
-	if (!sdl_module) {
-		std::cout << "Could not get handle to SDL2.dll" << std::endl;
-		return;
-	}
-	SDL_PushEvent_t pSDL_PushEvent = (SDL_PushEvent_t)GetProcAddress(sdl_module, "SDL_PushEvent");
-	if (!pSDL_PushEvent) {
-		std::cout << "Could not find SDL_PushEvent in SDL2.dll" << std::endl;
-		return;
-	}
-	SDL_GetTicks_t pSDL_GetTicks = (SDL_GetTicks_t)GetProcAddress(sdl_module, "SDL_GetTicks");
-	if (!pSDL_GetTicks) {
-		std::cout << "Could not find SDL_GetTicks in SDL2.dll" << std::endl;
-		return;
-	}
-	SDL_GetKeyboardFocus_t pSDL_GetKeyboardFocus_t = (SDL_GetKeyboardFocus_t)GetProcAddress(sdl_module, "SDL_GetKeyboardFocus");
-	if (!pSDL_GetKeyboardFocus_t) {
-		std::cout << "Could not find SDL_GetKeyboardFocus in SDL2.dll" << std::endl;
-		return;
-	}
-	SDL_GetWindowID_t pSDL_GetWindowID = (SDL_GetWindowID_t)GetProcAddress(sdl_module, "SDL_GetWindowID");
-	if (!pSDL_GetWindowID) {
-		std::cout << "Could not find SDL_GetWindowID in SDL2.dll" << std::endl;
-		return;
-	}
-
-	// Might be able to grab the window in other (better?) ways?
-	SDL_Window* window = pSDL_GetKeyboardFocus_t();
-
-	SDL_Event event1{};
-	event1.type = SDL_MOUSEMOTION;
-	event1.motion.x = x;
-	event1.motion.y = y;
-	event1.motion.xrel = 0; // could base this off the in-game global cursor position if needed
-	event1.motion.yrel = 0;
-	event1.motion.state = 0;
-	event1.motion.timestamp = pSDL_GetTicks();
-	event1.motion.windowID = pSDL_GetWindowID(window);
-	pSDL_PushEvent(&event1);
-
-	// send mouse down and up events
-	SDL_Event event2{};
-	event2.type = SDL_MOUSEBUTTONDOWN;
-	event2.button.button = button;
-	event2.button.state = SDL_PRESSED;
-	event2.button.clicks = 1;
-	event2.button.windowID = pSDL_GetWindowID(window);
-	event2.button.timestamp = pSDL_GetTicks();
-	pSDL_PushEvent(&event2);
-
-	SDL_Event event3{};
-	event3.type = SDL_MOUSEBUTTONUP;
-	event3.button.button = button;
-	event3.button.state = SDL_RELEASED;
-	event3.button.clicks = 1;
-	event3.button.windowID = pSDL_GetWindowID(window);
-	event3.button.timestamp = pSDL_GetTicks();
-	pSDL_PushEvent(&event3);
-}
-
 static void CALLBACK interactionContextCallback(void* clientData, const INTERACTION_CONTEXT_OUTPUT2* output) {
 	HWND hwnd = reinterpret_cast<HWND>(clientData);
 	switch (output->interactionId) {
 	case INTERACTION_ID_TAP: {
 		POINT clientPt = { static_cast<LONG>(output->x), static_cast<LONG>(output->y) };
 		ScreenToClient(hwnd, &clientPt);
-		SendMouseClick(clientPt.x, clientPt.y, SDL_BUTTON_LEFT);
+		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+		sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);
 		break;
 	}
 	case INTERACTION_ID_HOLD:
@@ -262,6 +201,7 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		break;
 	}
 }
+
 
 void initializeInteractionContext(HWND hwnd)
 {
