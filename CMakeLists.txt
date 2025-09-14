@@ -29,6 +29,9 @@ add_library (BG3TouchControls SHARED
 	"src/sdl_bindings/sdl_create_window_hook.cpp"
 	"src/sdl_bindings/sdl_bindings.cpp"
 	"src/sdl_bindings/send_mouse_events.cpp"
+	"src/reverse/action_sequences/action_sequences.cpp"
+	"src/reverse/action_sequences/swipe_up_sequence.cpp"
+	"src/reverse/action_sequences/swipe_down_sequence.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")

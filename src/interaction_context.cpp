@@ -8,6 +8,8 @@
 
 #include "pending_camera_updates.h"
 #include "sdl_bindings/sdl_bindings.h"
+#include "reverse/input_manager.h"
+#include "reverse/action_sequences/action_sequences.h"
 
 
 extern HINTERACTIONCONTEXT g_hInteractionContext;
@@ -160,6 +162,39 @@ static void handlePitchUpdate(float rawDelta, INTERACTION_FLAGS interactionFlags
 }
 
 
+static void handleUIScroll(int x, int y, float deltaY) {
+	// invert for natural fell. make configurable.
+	constexpr float scrollFactor = 0.1f;
+	constexpr float scrollThreshold = 1.0f;
+
+	const float abs_deltaY = std::abs(deltaY);
+
+	if (abs_deltaY < scrollThreshold) {
+		return;
+	}
+
+	EnterCriticalSection((CRITICAL_SECTION*)reverse::g_inputManager);
+
+	auto seq = deltaY >= 0 ? 
+		reverse::getSwipeDownSequence(abs_deltaY * scrollFactor) : 
+		reverse::getSwipeUpSequence(abs_deltaY * scrollFactor);
+
+	reverse::populateActionPointers(seq);
+	reverse::pushSequenceToBuffer(seq, 0);
+	// We need to send an input event to force the game to process the action requests queue.
+	// We could technically force the processing of the action requests queue ourselves, but there is
+	// a bunch of logic around that in original_processInput that we would have to replicate which doesn't
+	// seem straightforward and it's too much effort to reverse engineer all that logic when we can just
+	// send a dummy input event to trigger the processing.
+	// 
+	// In this case though, we need to send a mouse motion event anyways because the location of the game's
+	// virtual cursor is important in determining whether a UI scroll should be processed.
+	// For instance, if the cursor is not over a scrollable UI element, the scroll action should be ignored.
+	sdl_bindings::moveCursor(x, y);
+	LeaveCriticalSection((CRITICAL_SECTION*)reverse::g_inputManager);
+}
+
+
 static void CALLBACK interactionContextCallback(void* clientData, const INTERACTION_CONTEXT_OUTPUT2* output) {
 	HWND hwnd = reinterpret_cast<HWND>(clientData);
 	switch (output->interactionId) {
@@ -182,6 +217,9 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		if (output->contactCount == 1) {
 			handleAngleDeltaUpdate(output->arguments.manipulation.delta.translationX, output->interactionFlags);
 			handlePitchUpdate(output->arguments.manipulation.delta.translationY, output->interactionFlags);
+			POINT clientPt = { static_cast<LONG>(output->x), static_cast<LONG>(output->y) };
+			ScreenToClient(hwnd, &clientPt);
+			handleUIScroll(clientPt.x, clientPt.y, output->arguments.manipulation.delta.translationY);
 		}
 		else if (output->contactCount == 2) {
 			// Two finger manipulation. Use for panning. Invert for natural feel. Make configurable. 
