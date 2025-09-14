@@ -15,6 +15,7 @@ bool installUpdateCameraHook(uintptr_t start, uintptr_t end);
 bool installCalculatePitchHook(uintptr_t start, uintptr_t end);
 bool installUpdateCameraPitchHook(uintptr_t start, uintptr_t end);
 bool installProcessInputHook(uintptr_t start, uintptr_t end);
+bool installSDLCreateWindowHook();
 
 
 extern reverse::getActionRequestsBuffer_t original_getActionRequestsBuffer;

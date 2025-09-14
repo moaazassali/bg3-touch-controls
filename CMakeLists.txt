@@ -26,6 +26,7 @@ add_library (BG3TouchControls SHARED
 	"src/Hooks/process_input_hook.cpp"
 	"src/reverse/action_map.cpp"
 	"src/game_bindings.cpp"
+	"src/Hooks/sdl_create_window_hook.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")

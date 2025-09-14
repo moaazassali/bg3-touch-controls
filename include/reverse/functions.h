@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <SDL.h>
 
 #include "reverse/Camera.h"
 #include "reverse/input_manager.h"
@@ -7,6 +8,8 @@
 
 
 namespace reverse {
+	using SDL_CreateWindow_t = SDL_Window * (*)(const char* title, int x, int y, int w, int h, Uint32 flags);
+
 	// Adapted from BG3_NativeCameraTweaks:
 	// https://github.com/ersh1/BG3_NativeCameraTweaks/blob/876f2da98ede96d3db2884ffd9fb25687ada5ff1/src/Hooks.h
 	using updateCamera_t = void(*)(uint64_t a1, uint64_t a2, reverse::DeltaTimeObject* a3, reverse::UnkObject* a4);
