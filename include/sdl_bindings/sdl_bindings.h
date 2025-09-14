@@ -7,6 +7,8 @@ namespace sdl_bindings {
 	void bindToSDL();
 	bool installSDLCreateWindowHook();
 	uint32_t getWindowID(SDL_Window* window);
+	void moveCursor(int32_t x, int32_t y, int32_t xrel = 0, int32_t yrel = 0);
+	void clickMouseButton(uint8_t button);
 
 	using SDL_CreateWindow_t = SDL_Window* (*)(const char* title, int x, int y, int w, int h, Uint32 flags);
 	using SDL_PushEvent_t = int(*)(SDL_Event* event);
