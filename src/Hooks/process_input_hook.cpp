@@ -4,7 +4,10 @@
 
 
 reverse::processInput_t original_processInput = nullptr;
-reverse::InputManager* g_inputManager = nullptr;
+
+namespace reverse {
+	InputManager* g_inputManager = nullptr;
+}
 
 
 // This is called every frame to handle input
@@ -16,8 +19,8 @@ static void detour_processInput(reverse::InputManager* a1, uint64_t a2)
 	// The pointer to the InputManager singleton is stored at offset 0x6017C58.
 	// Our DLL loads before the InputManager singleton is initialized, so we need to set it here
 	// where we know that it is valid and not a nullptr anymore.
-	if (!g_inputManager) {
-		g_inputManager = a1;
+	if (!reverse::g_inputManager) {
+		reverse::g_inputManager = a1;
 	}
 	original_processInput(a1, a2);
 }
