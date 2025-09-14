@@ -5,6 +5,7 @@
 #include <chrono>
 #include <InteractionContext.h>
 
+#include "sdl_bindings/sdl_bindings.h"
 #include "game_bindings.h"
 
 LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -74,6 +75,7 @@ static void subclassGameWindow(HWND hwnd)
 DWORD WINAPI setupThread(LPVOID lpParam)
 {
 	createConsole();
+	bindToSDL();
 	HWND hGameWnd = findMainWindowForCurrentProcess();
 	subclassGameWindow(hGameWnd);
 	initializeInteractionContext(hGameWnd);

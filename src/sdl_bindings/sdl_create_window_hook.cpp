@@ -2,10 +2,10 @@
 #include <SDL.h>
 #include <MinHook.h>
 
-#include "reverse/functions.h"
+#include "sdl_bindings/sdl_bindings.h"
 
 
-reverse::SDL_CreateWindow_t original_SDL_CreateWindow = nullptr;
+sdl_bindings::SDL_CreateWindow_t original_SDL_CreateWindow = nullptr;
 
 
 static SDL_Window* detour_SDL_CreateWindow(const char* title, int x, int y, int w, int h, Uint32 flags) {
