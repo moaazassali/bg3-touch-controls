@@ -200,16 +200,17 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 
 	POINT clientPt = { static_cast<LONG>(output->x), static_cast<LONG>(output->y) };
 	ScreenToClient(hwnd, &clientPt);
-	sdl_bindings::moveCursor(clientPt.x, clientPt.y);
 
 	switch (output->interactionId) {
 	case INTERACTION_ID_TAP: 
 	{
+		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
 		sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);
 		break;
 	}
 	case INTERACTION_ID_HOLD:
 	{
+		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
 		sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
 		break;
 	}
@@ -232,6 +233,7 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 			// Maybe scrolling improvement should be handled by a separate UI mod instead.
 			// Or we could think of better ways to activate scrolling vs drag and drop like utilizing long press or using
 			// two finger swipe for scrolling.
+			sdl_bindings::moveCursor(clientPt.x, clientPt.y);
 
 			// Sending action requests of UI press and moving the cursor doesn't seem to activate the drag and drop behavior.
 			// However, sending an initial mouse press makes it work, so there might be some flag somewhere that gets set
