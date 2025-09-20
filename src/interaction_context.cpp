@@ -221,7 +221,8 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		// Think about the memory ordering and atomicity here later
 		// Does only atomicity matter? Is the performance benefit worth it?
 		if (output->contactCount == 1) {
-			if (!*reverse::g_isCursorOverUI) {
+			static int8_t pressDelay = -1;
+			if (!*reverse::g_isCursorOverUI && pressDelay == -1) {
 				handleAngleDeltaUpdate(output->arguments.manipulation.delta.translationX, output->interactionFlags);
 				handlePitchUpdate(output->arguments.manipulation.delta.translationY, output->interactionFlags);
 			}
@@ -252,7 +253,6 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 			// 
 			// For any other issues that pop up, we could consider the following:
 			// Timing issue? Add delays? Use SDL_WarpMouseInWindow instead of sending mouse move events?
-			static int8_t pressDelay = -1;
 			if (*reverse::g_isCursorOverUI) {
 				if (output->interactionFlags & INTERACTION_FLAG_BEGIN) {
 					// Instead of pressing immediately, we will wait for 2 more frames.
