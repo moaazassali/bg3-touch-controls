@@ -215,8 +215,10 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		// Think about the memory ordering and atomicity here later
 		// Does only atomicity matter? Is the performance benefit worth it?
 		if (output->contactCount == 1) {
-			handleAngleDeltaUpdate(output->arguments.manipulation.delta.translationX, output->interactionFlags);
-			handlePitchUpdate(output->arguments.manipulation.delta.translationY, output->interactionFlags);
+			if (!*reverse::g_isCursorOverUI) {
+				handleAngleDeltaUpdate(output->arguments.manipulation.delta.translationX, output->interactionFlags);
+				handlePitchUpdate(output->arguments.manipulation.delta.translationY, output->interactionFlags);
+			}
 			POINT clientPt = { static_cast<LONG>(output->x), static_cast<LONG>(output->y) };
 			ScreenToClient(hwnd, &clientPt);
 			// We have to disable UI scrolling for now because it conflicts with drag and drop.
@@ -266,6 +268,14 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 			}
 		}
 		else if (output->contactCount == 2) {
+			// We should also not do any camera movement when we are over UI here.
+			// But how do we determine that?
+			// Do we move cursor to midpoint of two contacts and check if we're over UI?
+			// Or do we check if either contact is over UI? If so, how do we do that? Do we move the cursor quickly
+			// to each contact and check the boolean?
+			// Will there be a timing issue here since the cursor position might be updated asynchronously but
+			// we can only check if we're over UI synchronously here?
+			// Maybe we should put a write breakpoint on the g_isCursorOverUI boolean and see how the game updates it.
 			// Two finger manipulation. Use for panning. Invert for natural feel. Make configurable. 
 			constexpr float xPanFactor = -3.0f;
 			g_pendingCameraUpdates.xPanDelta.fetch_add(output->arguments.manipulation.delta.translationX * xPanFactor);
