@@ -232,7 +232,6 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 			// Maybe scrolling improvement should be handled by a separate UI mod instead.
 			// Or we could think of better ways to activate scrolling vs drag and drop like utilizing long press or using
 			// two finger swipe for scrolling.
-			// handleUIScroll(clientPt.x, clientPt.y, output->arguments.manipulation.delta.translationY);
 
 			// Sending action requests of UI press and moving the cursor doesn't seem to activate the drag and drop behavior.
 			// However, sending an initial mouse press makes it work, so there might be some flag somewhere that gets set
@@ -298,6 +297,10 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 				// invert for natural feel. Make configurable.
 				constexpr float zoomFactor = -5.0f;
 				g_pendingCameraUpdates.zoomDelta.fetch_add(output->arguments.manipulation.delta.expansion * zoomFactor);
+			}
+			else {
+				// Uses the center of the two contacts. Might not be ideal but it's better than nothing.
+				handleUIScroll(clientPt.x, clientPt.y, output->arguments.manipulation.delta.translationY);
 			}
 		}
 		break;
