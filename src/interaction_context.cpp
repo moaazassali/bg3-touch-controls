@@ -206,8 +206,13 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		break;
 	}
 	case INTERACTION_ID_HOLD:
-		//std::cout << "HOLD event detected with " << output->contactCount << " contacts." << std::endl;
+	{
+		POINT clientPt = { static_cast<LONG>(output->x), static_cast<LONG>(output->y) };
+		ScreenToClient(hwnd, &clientPt);
+		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+		sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
 		break;
+	}
 	case INTERACTION_ID_MANIPULATION:
 	{
 		// Let's also use x translation to rotate the camera for now
