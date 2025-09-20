@@ -219,7 +219,51 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 			handlePitchUpdate(output->arguments.manipulation.delta.translationY, output->interactionFlags);
 			POINT clientPt = { static_cast<LONG>(output->x), static_cast<LONG>(output->y) };
 			ScreenToClient(hwnd, &clientPt);
-			handleUIScroll(clientPt.x, clientPt.y, output->arguments.manipulation.delta.translationY);
+			// We have to disable UI scrolling for now because it conflicts with drag and drop.
+			// Scrolling disables drag and drop and drag and drop disables scrolling.
+			// Also since the activation for drag and drop and scrolling is the same (a swipe motion),
+			// it's not possible to distinguish between the two.
+			// We can still use the scrolling bars though, but they're very narrow and hard to hit with a finger (even a pen).
+			// Maybe scrolling improvement should be handled by a separate UI mod instead.
+			// Or we could think of better ways to activate scrolling vs drag and drop like utilizing long press or using
+			// two finger swipe for scrolling.
+			// handleUIScroll(clientPt.x, clientPt.y, output->arguments.manipulation.delta.translationY);
+			sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+
+			// Sending action requests of UI press and moving the cursor doesn't seem to activate the drag and drop behavior.
+			// However, sending an initial mouse press makes it work, so there might be some flag somewhere that gets set
+			// regarding mouse state independent of action requests, or we maybe have an issue with our UI press action
+			// requests (although I couldn't find any).
+			// Another possibility is that the consumers of UI press actions checks the mouse state somehow directly
+			// but I couldn't find calls to SDL to check mouse state though, so they could be using some other way.
+			//
+			// Our only option then is to send an actual mouse press event via SDL and find a way to determine if we are
+			// over a UI element or not to avoid triggering mouse events when we are not over UI like when we want to rotate
+			// the camera beacuse that will cause character movement.
+			// By finding the byte at offset 0x240 of the large unknown singleton passed to unk_consumesFilteredActionsQueue,
+			// we can determine that.
+			//
+			// This also helps us avoid doing any camera movement when we are over UI, which we should add next.
+			//
+			// There is something a bit wrong about this though.
+			// The drag and drop behavior seems to work well in UI like inventory or map.
+			// However, in UI overlays like abilities slots or character panel, it's a bit off.
+			// In the abilities slots, for example, it mostly doesn't drag anything but sometimes it does?
+			// For the character panel, it mostly works but sometimes it doesn't?
+			// Timing issue? Add delays? Use SDL_WarpMouseInWindow instead of sending mouse move events? idk...
+			static bool startedPress = false;
+			if (output->interactionFlags & INTERACTION_FLAG_BEGIN) {
+				if (*reverse::g_isCursorOverUI) {
+					startedPress = true;
+					sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
+				}
+			}
+			else if (output->interactionFlags & INTERACTION_FLAG_END) {
+				if (startedPress) {
+					startedPress = false;
+					sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
+				}
+			}
 		}
 		else if (output->contactCount == 2) {
 			// Two finger manipulation. Use for panning. Invert for natural feel. Make configurable. 
