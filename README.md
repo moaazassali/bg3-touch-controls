@@ -67,3 +67,11 @@ Or we could use a smaller number of frames, like 3.
 I am not really liking the feel of camera rotation and pitch.
 Both panning and zooming don't have inertia but still feel smoother imo.
 Maybe it's the linear mapping of translation delta to angle/pitch delta that feels off?
+
+How can we prevent the cursor hovering behavior when using touch?
+The entity higlighting behavior is tied to cursor position and we rely on that for touch,
+but we don't want the cursor hovering behavior since it doesn't make sense for touch.
+
+Should we try relying on action requests even for camera updates?
+Currently we are directly modifying the camera object properties directly, which might be causing issues.
+Maybe relying on action requests would be more robust and also more smooth?
