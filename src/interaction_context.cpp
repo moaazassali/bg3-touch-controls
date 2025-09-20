@@ -197,19 +197,19 @@ static void handleUIScroll(int x, int y, float deltaY) {
 
 static void CALLBACK interactionContextCallback(void* clientData, const INTERACTION_CONTEXT_OUTPUT2* output) {
 	HWND hwnd = reinterpret_cast<HWND>(clientData);
+
+	POINT clientPt = { static_cast<LONG>(output->x), static_cast<LONG>(output->y) };
+	ScreenToClient(hwnd, &clientPt);
+	sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+
 	switch (output->interactionId) {
-	case INTERACTION_ID_TAP: {
-		POINT clientPt = { static_cast<LONG>(output->x), static_cast<LONG>(output->y) };
-		ScreenToClient(hwnd, &clientPt);
-		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+	case INTERACTION_ID_TAP: 
+	{
 		sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);
 		break;
 	}
 	case INTERACTION_ID_HOLD:
 	{
-		POINT clientPt = { static_cast<LONG>(output->x), static_cast<LONG>(output->y) };
-		ScreenToClient(hwnd, &clientPt);
-		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
 		sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
 		break;
 	}
@@ -224,8 +224,6 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 				handleAngleDeltaUpdate(output->arguments.manipulation.delta.translationX, output->interactionFlags);
 				handlePitchUpdate(output->arguments.manipulation.delta.translationY, output->interactionFlags);
 			}
-			POINT clientPt = { static_cast<LONG>(output->x), static_cast<LONG>(output->y) };
-			ScreenToClient(hwnd, &clientPt);
 			// We have to disable UI scrolling for now because it conflicts with drag and drop.
 			// Scrolling disables drag and drop and drag and drop disables scrolling.
 			// Also since the activation for drag and drop and scrolling is the same (a swipe motion),
@@ -235,9 +233,6 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 			// Or we could think of better ways to activate scrolling vs drag and drop like utilizing long press or using
 			// two finger swipe for scrolling.
 			// handleUIScroll(clientPt.x, clientPt.y, output->arguments.manipulation.delta.translationY);
-
-			// Using SDL_WarpMouseInWindow doesn't help either.
-			sdl_bindings::moveCursor(clientPt.x, clientPt.y);
 
 			// Sending action requests of UI press and moving the cursor doesn't seem to activate the drag and drop behavior.
 			// However, sending an initial mouse press makes it work, so there might be some flag somewhere that gets set
