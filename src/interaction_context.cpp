@@ -289,14 +289,16 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 			// we can only check if we're over UI synchronously here?
 			// Maybe we should put a write breakpoint on the g_isCursorOverUI boolean and see how the game updates it.
 			// Two finger manipulation. Use for panning. Invert for natural feel. Make configurable. 
-			constexpr float xPanFactor = -3.0f;
-			g_pendingCameraUpdates.xPanDelta.fetch_add(output->arguments.manipulation.delta.translationX * xPanFactor);
-			constexpr float yPanFactor = -3.0f;
-			g_pendingCameraUpdates.yPanDelta.fetch_add(output->arguments.manipulation.delta.translationY * yPanFactor);
+			if (!*reverse::g_isCursorOverUI) {
+				constexpr float xPanFactor = -3.0f;
+				g_pendingCameraUpdates.xPanDelta.fetch_add(output->arguments.manipulation.delta.translationX * xPanFactor);
+				constexpr float yPanFactor = -3.0f;
+				g_pendingCameraUpdates.yPanDelta.fetch_add(output->arguments.manipulation.delta.translationY * yPanFactor);
 
-			// invert for natural feel. Make configurable.
-			constexpr float zoomFactor = -5.0f;
-			g_pendingCameraUpdates.zoomDelta.fetch_add(output->arguments.manipulation.delta.expansion * zoomFactor);
+				// invert for natural feel. Make configurable.
+				constexpr float zoomFactor = -5.0f;
+				g_pendingCameraUpdates.zoomDelta.fetch_add(output->arguments.manipulation.delta.expansion * zoomFactor);
+			}
 		}
 		break;
 	}
