@@ -302,7 +302,16 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 			}
 			else {
 				// Uses the center of the two contacts. Might not be ideal but it's better than nothing.
-				handleUIScroll(clientPt.x, clientPt.y, output->arguments.manipulation.delta.translationY);
+				// Let's lock the cursor to the position at the beginning of the interaction for better control.
+				// This way we don't end up moving the cursor outside the UI element we're trying to scroll and
+				// lose the scrolling interaction or cause other unwanted effects (like scrolling a different UI element
+				// or panning the camera if we move outside the UI).
+				static int initX, initY = 0;
+				if (output->interactionFlags & INTERACTION_FLAG_BEGIN) {
+					initX = clientPt.x;
+					initY = clientPt.y;
+				}
+				handleUIScroll(initX, initY, output->arguments.manipulation.delta.translationY);
 			}
 		}
 		break;
