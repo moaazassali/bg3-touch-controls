@@ -264,10 +264,10 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 					// and abilities slots. I think the reason for that is that the cursor position has still not been
 					// updated in the game's internal state, so it sends the press event to the wrong location.
 					// It doesn't make sense that this issue doesn't happen for taps and in inventory UI though...
-					// From my testing, 1 frame is enough but to be safe we will wait for 2 frames.
+					// From my testing, 1 frame was not always, but 2 frames seems good so far.
 					pressDelay = 2;
 				}
-				if (pressDelay > 0) {
+				else if (pressDelay > 0) {
 					--pressDelay;
 					if (pressDelay == 0) {
 						sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
