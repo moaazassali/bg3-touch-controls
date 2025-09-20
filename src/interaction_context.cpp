@@ -250,26 +250,36 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 			// By finding the byte at offset 0x240 of the large unknown singleton passed to unk_consumesFilteredActionsQueue,
 			// we can determine that.
 			//
-			// This also helps us avoid doing any camera movement when we are over UI, which we should add next.
-			//
-			// There is something a bit wrong about this though.
-			// The drag and drop behavior seems to work well in UI like inventory or map.
-			// However, in UI overlays like abilities slots or character panel, it's a bit off.
-			// In the abilities slots, for example, it mostly doesn't drag anything but sometimes it does?
-			// For the character panel, it mostly works but sometimes it doesn't?
-			// Timing issue? Add delays? Use SDL_WarpMouseInWindow instead of sending mouse move events? idk...
-			static bool startedPress = false;
-			if (output->interactionFlags & INTERACTION_FLAG_BEGIN) {
-				if (*reverse::g_isCursorOverUI) {
-					startedPress = true;
-					sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
+			// This also helps us avoid doing any camera movement when we are over UI.
+			// 
+			// For any other issues that pop up, we could consider the following:
+			// Timing issue? Add delays? Use SDL_WarpMouseInWindow instead of sending mouse move events?
+			static int8_t pressDelay = -1;
+			if (*reverse::g_isCursorOverUI) {
+				if (output->interactionFlags & INTERACTION_FLAG_BEGIN) {
+					// Instead of pressing immediately, we will wait for 2 more frames.
+					// This fixes the issue where a click doesn't register in some UI elements like the character panel
+					// and abilities slots. I think the reason for that is that the cursor position has still not been
+					// updated in the game's internal state, so it sends the press event to the wrong location.
+					// It doesn't make sense that this issue doesn't happen for taps and in inventory UI though...
+					// From my testing, 1 frame is enough but to be safe we will wait for 2 frames.
+					pressDelay = 2;
+				}
+				if (pressDelay > 0) {
+					--pressDelay;
+					if (pressDelay == 0) {
+						sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
+					}
 				}
 			}
-			else if (output->interactionFlags & INTERACTION_FLAG_END) {
-				if (startedPress) {
-					startedPress = false;
+
+			if (output->interactionFlags & INTERACTION_FLAG_END) {
+				// If we are still waiting to press the button, we should not send a release event.
+				// We can just reset the pressDelay to -1 as if nothing happened.
+				if (pressDelay == 0) {
 					sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
 				}
+				pressDelay = -1;
 			}
 		}
 		else if (output->contactCount == 2) {
