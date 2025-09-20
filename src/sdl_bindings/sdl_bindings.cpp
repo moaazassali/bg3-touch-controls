@@ -10,6 +10,7 @@ namespace sdl_bindings {
 	SDL_PushEvent_t original_SDL_PushEvent = nullptr;
 	SDL_GetTicks_t original_SDL_GetTicks = nullptr;
 	SDL_GetWindowID_t original_SDL_GetWindowID = nullptr;
+	SDL_WarpMouseInWindow_t original_SDL_WarpMouseInWindow = nullptr;
 
 
 	void bindToSDL()
@@ -37,6 +38,11 @@ namespace sdl_bindings {
 		original_SDL_GetWindowID = (SDL_GetWindowID_t)GetProcAddress(sdl_module, "SDL_GetWindowID");
 		if (!original_SDL_GetWindowID) {
 			std::cout << "Could not find SDL_GetWindowID in SDL2.dll" << std::endl;
+			return;
+		}
+		original_SDL_WarpMouseInWindow = (SDL_WarpMouseInWindow_t)GetProcAddress(sdl_module, "SDL_WarpMouseInWindow");
+		if (!original_SDL_WarpMouseInWindow) {
+			std::cout << "Could not find SDL_WarpMouseInWindow in SDL2.dll" << std::endl;
 			return;
 		}
 

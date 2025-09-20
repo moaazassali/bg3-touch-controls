@@ -235,6 +235,8 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 			// Or we could think of better ways to activate scrolling vs drag and drop like utilizing long press or using
 			// two finger swipe for scrolling.
 			// handleUIScroll(clientPt.x, clientPt.y, output->arguments.manipulation.delta.translationY);
+
+			// Using SDL_WarpMouseInWindow doesn't help either.
 			sdl_bindings::moveCursor(clientPt.x, clientPt.y);
 
 			// Sending action requests of UI press and moving the cursor doesn't seem to activate the drag and drop behavior.

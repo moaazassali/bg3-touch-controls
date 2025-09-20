@@ -16,6 +16,11 @@ namespace sdl_bindings {
 	}
 
 
+	void moveCursorWithWarp(int32_t x, int32_t y) {
+		original_SDL_WarpMouseInWindow(g_gameWindow, x, y);
+	}
+
+
 	void clickMouseButton(uint8_t button) {
 		SDL_Event eventDown{};
 		eventDown.type = SDL_MOUSEBUTTONDOWN;
