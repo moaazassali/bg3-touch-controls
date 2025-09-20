@@ -75,3 +75,10 @@ but we don't want the cursor hovering behavior since it doesn't make sense for t
 Should we try relying on action requests even for camera updates?
 Currently we are directly modifying the camera object properties directly, which might be causing issues.
 Maybe relying on action requests would be more robust and also more smooth?
+
+Moving the cursor in the interaction context callback only doesn't feel smooth.
+On the hand, moving the cursor in processBufferedPacketsIfReady() or in customWndProc()
+feels good, but it will cause some issues like in the UI scrolling functionality which relies
+on locking the cursor position.
+We can probably have some state variable to indicate if we should activate "smooth cursor movement"
+or not. Based on that, we can then conditionally move the cursor in processBufferedPacketsIfReady().
