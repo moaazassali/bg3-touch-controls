@@ -59,4 +59,11 @@ namespace reverse {
 	// a3 is a struct that holds two pointers to the start and end of the action requests queue.
 	using processActionRequestsQueue_t = void* (*)(InputManager* a1, void* a2, void* a3, uint8_t a4);
 	constexpr const uintptr_t offset_processActionRequestsQueue = 0x40C41C0;
+
+	// I am not very sure what this does yet, but it might be the only function that reads from the
+	// final filtered action requests queue to dispatch the actions to the game objects.
+	// a1 is a pointer to some massive singleton. The byte at 0x240 indicates whether the cursor is over UI.
+	// a2 might be the cursor coordinates.
+	using unk_consumesFilteredActionsQueue_t = void(*)(void* a1, double* a2);
+	constexpr const uintptr_t offset_unk_consumesFilteredActionsQueue = 0x120C620;
 }

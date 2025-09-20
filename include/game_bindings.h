@@ -15,6 +15,7 @@ bool installUpdateCameraHook(uintptr_t start, uintptr_t end);
 bool installCalculatePitchHook(uintptr_t start, uintptr_t end);
 bool installUpdateCameraPitchHook(uintptr_t start, uintptr_t end);
 bool installProcessInputHook(uintptr_t start, uintptr_t end);
+bool installUnkConsumesFilteredActionsQueueHook(uintptr_t start, uintptr_t end);
 
 
 extern reverse::getActionRequestsBuffer_t original_getActionRequestsBuffer;
@@ -22,4 +23,7 @@ extern reverse::pushToActionRequestsQueue_t original_pushToActionRequestsQueue;
 extern reverse::processActionRequestsQueue_t original_processActionRequestsQueue;
 
 
-extern reverse::InputManager* g_inputManager;
+namespace reverse {
+	extern InputManager* g_inputManager;
+	extern bool* g_isCursorOverUI;
+}
