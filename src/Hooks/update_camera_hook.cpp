@@ -66,7 +66,7 @@ static void detour_updateCamera(uint64_t a1, uint64_t a2, reverse::DeltaTimeObje
 		const auto xPanDelta = g_pendingCameraUpdates.xPanDelta.exchange(0.0f);
 		const auto yPanDelta = g_pendingCameraUpdates.yPanDelta.exchange(0.0f);
 		const auto zoomDelta = g_pendingCameraUpdates.zoomDelta.exchange(0.0f);
-		const auto isPanningOrZooming = xPanDelta != 0.0f && yPanDelta != 0.0f && zoomDelta != 0.0f;
+		const auto isPanningOrZooming = xPanDelta != 0.0f || yPanDelta != 0.0f || zoomDelta != 0.0f;
 
 		if (isPanningOrZooming && cam->followPlayer) {
 			const float PAN_DOMINANCE_FACTOR = 10.0f;
