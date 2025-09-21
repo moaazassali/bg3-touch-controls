@@ -302,64 +302,51 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		// Think about the memory ordering and atomicity here later
 		// Does only atomicity matter? Is the performance benefit worth it?
 		if (output->contactCount == 1) {
-			static int8_t pressDelay = -1;
-			if (!*reverse::g_isCursorOverUI && pressDelay == -1) {
-				handleAngleDeltaUpdate(output->arguments.manipulation.delta.translationX, output->interactionFlags);
-				handlePitchUpdate(output->arguments.manipulation.delta.translationY, output->interactionFlags);
-			}
-			// We have to disable UI scrolling for now because it conflicts with drag and drop.
-			// Scrolling disables drag and drop and drag and drop disables scrolling.
-			// Also since the activation for drag and drop and scrolling is the same (a swipe motion),
-			// it's not possible to distinguish between the two.
-			// We can still use the scrolling bars though, but they're very narrow and hard to hit with a finger (even a pen).
-			// Maybe scrolling improvement should be handled by a separate UI mod instead.
-			// Or we could think of better ways to activate scrolling vs drag and drop like utilizing long press or using
-			// two finger swipe for scrolling.
+			static bool startedOverUI = false;
 			sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+			// Similar to the tap case, we need a small delay for the g_isCursorOverUI boolean to be updated correctly
+			// based on the new cursor position.
+			auto translationX = output->arguments.manipulation.delta.translationX;
+			auto translationY = output->arguments.manipulation.delta.translationY;
+			auto interactionFlags = output->interactionFlags;
 
-			// Sending action requests of UI press and moving the cursor doesn't seem to activate the drag and drop behavior.
-			// However, sending an initial mouse press makes it work, so there might be some flag somewhere that gets set
-			// regarding mouse state independent of action requests, or we maybe have an issue with our UI press action
-			// requests (although I couldn't find any).
-			// Another possibility is that the consumers of UI press actions checks the mouse state somehow directly
-			// but I couldn't find calls to SDL to check mouse state though, so they could be using some other way.
-			//
-			// Our only option then is to send an actual mouse press event via SDL and find a way to determine if we are
-			// over a UI element or not to avoid triggering mouse events when we are not over UI like when we want to rotate
-			// the camera beacuse that will cause character movement.
-			// By finding the byte at offset 0x240 of the large unknown singleton passed to unk_consumesFilteredActionsQueue,
-			// we can determine that.
-			//
-			// This also helps us avoid doing any camera movement when we are over UI.
-			// 
-			// For any other issues that pop up, we could consider the following:
-			// Timing issue? Add delays? Use SDL_WarpMouseInWindow instead of sending mouse move events?
-			if (*reverse::g_isCursorOverUI) {
-				if (output->interactionFlags & INTERACTION_FLAG_BEGIN) {
-					// Instead of pressing immediately, we will wait for 2 more frames.
-					// This fixes the issue where a click doesn't register in some UI elements like the character panel
-					// and abilities slots. I think the reason for that is that the cursor position has still not been
-					// updated in the game's internal state, so it sends the press event to the wrong location.
-					// It doesn't make sense that this issue doesn't happen for taps and in inventory UI though...
-					// From my testing, 1 frame was not always, but 2 frames seems good so far.
-					pressDelay = 2;
+			// Technically not thread safe because of the array access, but we all our calls should always happen in order
+			// one by one. So, it should be fine for now. Implement mutex later.
+			auto task = [translationX, translationY, interactionFlags]() {
+				// We should not do any camera movement when we are over UI or if we started the manipulation over UI.
+				if (!*reverse::g_isCursorOverUI && !startedOverUI) {
+					handleAngleDeltaUpdate(translationX, interactionFlags);
+					handlePitchUpdate(translationY, interactionFlags);
 				}
-				else if (pressDelay > 0) {
-					--pressDelay;
-					if (pressDelay == 0) {
-						sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
+				// Sending action requests of UI press and moving the cursor doesn't seem to activate the drag and drop behavior.
+				// However, sending an initial mouse press makes it work, so there might be some flag somewhere that gets set
+				// regarding mouse state independent of action requests, or we maybe have an issue with our UI press action
+				// requests (although I couldn't find any).
+				// Another possibility is that the consumers of UI press actions checks the mouse state somehow directly
+				// but I couldn't find calls to SDL to check mouse state though, so they could be using some other way.
+				//
+				// Our only option then is to send an actual mouse press event via SDL and find a way to determine if we are
+				// over a UI element or not to avoid triggering mouse events when we are not over UI like when we want to rotate
+				// the camera beacuse that will cause character movement.
+				// By finding the byte at offset 0x240 of the large unknown singleton passed to unk_consumesFilteredActionsQueue,
+				// we can determine that.
+				//
+				// This also helps us avoid doing any camera movement when we are over UI.
+				else if (*reverse::g_isCursorOverUI && interactionFlags & INTERACTION_FLAG_BEGIN) {
+					if (startedOverUI) {
+						// should never happen
+						std::cout << "Warning: Interaction began over UI but startedOverUI was already true!" << std::endl;
 					}
+					startedOverUI = true;
+					sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
 				}
-			}
 
-			if (output->interactionFlags & INTERACTION_FLAG_END) {
-				// If we are still waiting to press the button, we should not send a release event.
-				// We can just reset the pressDelay to -1 as if nothing happened.
-				if (pressDelay == 0) {
+				if (interactionFlags & INTERACTION_FLAG_END) {
 					sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
+					startedOverUI = false;
 				}
-				pressDelay = -1;
-			}
+			};
+			scheduleTask(task, 1);
 		}
 		else if (output->contactCount == 2) {
 			// We should also not do any camera movement when we are over UI here.
