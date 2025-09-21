@@ -314,11 +314,6 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 			// Technically not thread safe because of the array access, but we all our calls should always happen in order
 			// one by one. So, it should be fine for now. Implement mutex later.
 			auto task = [translationX, translationY, interactionFlags]() {
-				// We should not do any camera movement when we are over UI or if we started the manipulation over UI.
-				if (!*reverse::g_isCursorOverUI && !startedOverUI) {
-					handleAngleDeltaUpdate(translationX, interactionFlags);
-					handlePitchUpdate(translationY, interactionFlags);
-				}
 				// Sending action requests of UI press and moving the cursor doesn't seem to activate the drag and drop behavior.
 				// However, sending an initial mouse press makes it work, so there might be some flag somewhere that gets set
 				// regarding mouse state independent of action requests, or we maybe have an issue with our UI press action
@@ -333,18 +328,21 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 				// we can determine that.
 				//
 				// This also helps us avoid doing any camera movement when we are over UI.
-				else if (*reverse::g_isCursorOverUI && interactionFlags & INTERACTION_FLAG_BEGIN) {
-					if (startedOverUI) {
-						// should never happen
-						std::cout << "Warning: Interaction began over UI but startedOverUI was already true!" << std::endl;
+				if (interactionFlags & INTERACTION_FLAG_BEGIN) {
+					if (*reverse::g_isCursorOverUI) {
+						sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
+						startedOverUI = true;
 					}
-					startedOverUI = true;
-					sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
+					else {
+						startedOverUI = false;
+					}
 				}
-
-				if (interactionFlags & INTERACTION_FLAG_END) {
+				if (!startedOverUI) {
+					handleAngleDeltaUpdate(translationX, interactionFlags);
+					handlePitchUpdate(translationY, interactionFlags);
+				}
+				if (interactionFlags & INTERACTION_FLAG_END && startedOverUI) {
 					sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
-					startedOverUI = false;
 				}
 			};
 			// I tested 1 to 5ms and they all caused some issues where g_isCursorOverUI was true when it shouldn't be,
