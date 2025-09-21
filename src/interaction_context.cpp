@@ -10,6 +10,7 @@
 #include "sdl_bindings/sdl_bindings.h"
 #include "reverse/input_manager.h"
 #include "reverse/action_sequences/action_sequences.h"
+#include <functional>
 
 
 extern HINTERACTIONCONTEXT g_hInteractionContext;
@@ -175,8 +176,8 @@ static void handleUIScroll(int x, int y, float deltaY) {
 
 	EnterCriticalSection((CRITICAL_SECTION*)reverse::g_inputManager);
 
-	auto seq = deltaY >= 0 ? 
-		reverse::getSwipeDownSequence(abs_deltaY * scrollFactor) : 
+	auto seq = deltaY >= 0 ?
+		reverse::getSwipeDownSequence(abs_deltaY * scrollFactor) :
 		reverse::getSwipeUpSequence(abs_deltaY * scrollFactor);
 
 	reverse::populateActionPointers(seq);
@@ -195,6 +196,66 @@ static void handleUIScroll(int x, int y, float deltaY) {
 }
 
 
+// We could use a separate timer thread with precise timings if needed
+// but this should be good enough for our use case\
+// Since our processing of touch input happens at a rate of 1/60s, we 
+struct TapTimerContext {
+	PTP_TIMER timer;
+	std::function<void()> task;
+};
+
+static VOID CALLBACK TapThreadpoolTimerCallback(
+	PTP_CALLBACK_INSTANCE      /*Instance*/,
+	PVOID                      pv,
+	PTP_TIMER                  pTimer)
+{
+	auto ctx = reinterpret_cast<TapTimerContext*>(pv);
+	if (ctx && ctx->task) {
+		try {
+			ctx->task();
+		}
+		catch (...) {
+			// swallow exceptions in timer callback to avoid terminating the process
+		}
+	}
+
+	// Close and free the timer object.
+	// CloseThreadpoolTimer will wait for outstanding callbacks; calling from the callback
+	// is safe here for a one-shot timer because there are no other callbacks pending.
+	if (pTimer) {
+		CloseThreadpoolTimer(pTimer);
+	}
+	delete ctx;
+}
+
+static void scheduleTask(std::function<void()> task, uint32_t delayMs)
+{
+	auto ctx = new (std::nothrow) TapTimerContext;
+	if (!ctx) {
+		std::cout << "Failed to allocate TapTimerContext for tap click." << std::endl;
+		return;
+	}
+
+	ctx->timer = CreateThreadpoolTimer(TapThreadpoolTimerCallback, ctx, nullptr);
+	ctx->task = std::move(task);
+	if (!ctx->timer) {
+		std::cout << "CreateThreadpoolTimer failed. Error: " << GetLastError() << std::endl;
+		delete ctx;
+		return;
+	}
+
+	// prepare a relative FILETIME: negative 100-ns units. 1ms = 1 * 10,000 * 100-ns
+	LARGE_INTEGER liDue{};
+	liDue.QuadPart = -static_cast<LONGLONG>(delayMs * 10000LL);
+	FILETIME ft{};
+	ft.dwLowDateTime = liDue.LowPart;
+	ft.dwHighDateTime = liDue.HighPart;
+
+	// arm one-shot timer: period = 0, window = 0 (no coalescing window)
+	SetThreadpoolTimer(ctx->timer, &ft, 0, 0);
+}
+
+
 static void CALLBACK interactionContextCallback(void* clientData, const INTERACTION_CONTEXT_OUTPUT2* output) {
 	HWND hwnd = reinterpret_cast<HWND>(clientData);
 
@@ -202,16 +263,36 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 	ScreenToClient(hwnd, &clientPt);
 
 	switch (output->interactionId) {
-	case INTERACTION_ID_TAP: 
+	case INTERACTION_ID_TAP:
 	{
 		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
-		sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);
+		// Sending a click immediately doesn't always work
+		// For example, if we were interacting with a UI and lifted our finger without leaving the UI element,
+		// the "cursor" would still be over the UI obviously.
+		// Now consider the case where we want to tap outside the UI element (i.e. the game world) to move the character.
+		// You would then assume that calling moveCursor followed by clickMouseButton would work, but it doesn't.
+		// You have to instead click outside first to shift the "focus" away and then click again to register the click.
+		// The moveCursor and clickMouseButton calls are processed in the same frame, so I think that the game world object
+		// still thinks the cursor is over the UI element when processing the clickMouseButton call.
+		// This makes it ignore the click because it thinks that the cursor is outside its bounds, so it doesn't process it.
+		// By adding a small delay, we ensure that the moveCursor call is processed in a separate frame before the clickMouseButton call.
+		// 
+		// This applies to all interaction types, so we will use this approach for all of them when needed.
+		// With this, we can be sure that the cursor position is exactly where we want it to be before sending any new events.
+		// I tested down to 100ms and it stil worked fine. We are probably limited by the precision of the timer anyway.
+		// Also, anything under 1/60s (16.67ms) doesn't make sense because we are processing input at 60Hz.
+		//
+		// We will also avoid a lot frustrating and hard-to-debug issues this way where events don't seem to register.
+		// We could make the delay configurable later if needed.
+		auto task = []() {sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);};
+		scheduleTask(task, 1);
 		break;
 	}
 	case INTERACTION_ID_HOLD:
 	{
 		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
-		sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
+		auto task = []() {sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);};
+		scheduleTask(task, 1);
 		break;
 	}
 	case INTERACTION_ID_MANIPULATION:
