@@ -417,6 +417,16 @@ void initializeInteractionContext(HWND hwnd)
 		}
 		std::cout << "Interaction Context configuration set." << std::endl;
 
+		hResult = SetHoldParameterInteractionContext(
+			g_hInteractionContext,
+			HOLD_PARAMETER_THRESHOLD_START_DELAY,
+			250.0f // milliseconds; default is 500ms
+		);
+		if FAILED(hResult) {
+			std::cout
+				<< "FAILURE: Could not set Interaction Context hold start delay. HRESULT: "
+				<< std::hex << hResult << std::dec << std::endl;
+		}
 
 		// Register our callback function to receive the events from the Interaction Context
 		hResult = RegisterOutputCallbackInteractionContext2(g_hInteractionContext, interactionContextCallback, hwnd);
