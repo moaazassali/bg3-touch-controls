@@ -281,18 +281,19 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		// With this, we can be sure that the cursor position is exactly where we want it to be before sending any new events.
 		// I tested down to 100ms and it stil worked fine. We are probably limited by the precision of the timer anyway.
 		// Also, anything under 1/60s (16.67ms) doesn't make sense because we are processing input at 60Hz.
+		// However, we will set it to 10ms to be consistent with the single finger manipulation case below.
 		//
 		// We will also avoid a lot frustrating and hard-to-debug issues this way where events don't seem to register.
 		// We could make the delay configurable later if needed.
 		auto task = []() {sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);};
-		scheduleTask(task, 1);
+		scheduleTask(task, 10);
 		break;
 	}
 	case INTERACTION_ID_HOLD:
 	{
 		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
 		auto task = []() {sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);};
-		scheduleTask(task, 1);
+		scheduleTask(task, 10);
 		break;
 	}
 	case INTERACTION_ID_MANIPULATION:
@@ -346,7 +347,11 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 					startedOverUI = false;
 				}
 			};
-			scheduleTask(task, 1);
+			// I tested 1 to 5ms and they all caused some issues where g_isCursorOverUI was true when it shouldn't be,
+			// which sends a mouse click and causes player movement (i.e. mouse drag behavior on game world).
+			// This seems to be an issue only after swiping over the abilities panel and not all UI elements.
+			// 10 ms seems to be fine.
+			scheduleTask(task, 10);
 		}
 		else if (output->contactCount == 2) {
 			// We should also not do any camera movement when we are over UI here.
