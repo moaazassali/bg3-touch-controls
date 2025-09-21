@@ -290,9 +290,14 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 	}
 	case INTERACTION_ID_HOLD:
 	{
-		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
-		auto task = []() {sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);};
-		scheduleTask(task, 10);
+		// This is called twice for a hold: once at the beginning when the start delay threshold is reached
+		// and another when the finger is lifted.
+		// We don't want to send another click when the finger is lifted.
+		if (output->interactionFlags & INTERACTION_FLAG_BEGIN) {
+			sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+			auto task = []() {sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);};
+			scheduleTask(task, 10);
+		}
 		break;
 	}
 	case INTERACTION_ID_MANIPULATION:

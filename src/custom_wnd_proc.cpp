@@ -82,16 +82,6 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 			// so there should be no performance issues
 			// As fast as the user can tap, it will never be more than 10-20 times a second which
 			// is negligible compared to our 60hz update rate.
-			// 
-			// UPDATE:
-			// This is causing an issue with hold interactions where they get triggered again when the hold is released.
-			// Needs further investigation. But for now, we will keep it so the rest of the interactions work.
-			// If nothing works, we can always store the pointerId(s) of the hold and skip processing any hold
-			// from the same pointerId(s).
-			// What if the same pointerId is used for a new touch after the hold is released? Is that possible?
-			// If so, we need to clear the stored pointerId(s) when a new touch is detected for the same pointerId.
-			// Or we could also remove it from our set in here after removing it from the interaction context.
-			// Think about what's safer/better.
 			ProcessBufferedPacketsInteractionContext(g_hInteractionContext);
 			if FAILED(RemovePointerInteractionContext(g_hInteractionContext, pointerId)) {
 				std::cout << "Failed to remove pointer in WM_POINTERUP." << std::endl;
