@@ -92,3 +92,30 @@ only. SDL left release also triggers Action1 release which is what causes the ch
 We could also queue an Action1 release event immediately after the SDL left press event, which will
 cancel the Action1 press event as we would still be over a UI element. An Action1 release event will
 still be triggered, but I think it should be useless as it won't be preceded by an Action1 press event.
+
+We could think of hold + swipe and double tap + swipe gestures. Maybe as alternative ways to pan the camera?
+For double tap + swipe, we would probably need to delay the first tap action a bit to see if a second press in happens,
+so we don't trigger a single tap action immediately if a swipe is intended.
+Something like this:
+```
+auto task = []() {
+	if (*reverse::g_isCursorOverUI) {
+		sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);
+	}
+	else {
+		auto task = []() {
+			if (!isSwipingSingleContact) {
+				sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);
+			}
+		};
+		scheduleTask(task, some_time_threshold);
+	}
+};
+scheduleTask(task, 10);
+```
+For hold + swipe, we would need to set a flag when the cancel flag is set and probably not send a right click
+at the begin flag. This might conflict with camera rotation/pitch controls though if the user holds for too
+long but the intention was to rotate/pitch the camera. The controls are too similar.
+
+We could also think of handling two/three finger taps and three finger swipes.
+Maybe one to reset the camera instead of using the character UI icon.
