@@ -82,3 +82,13 @@ feels good, but it will cause some issues like in the UI scrolling functionality
 on locking the cursor position.
 We can probably have some state variable to indicate if we should activate "smooth cursor movement"
 or not. Based on that, we can then conditionally move the cursor in processBufferedPacketsIfReady().
+
+If we start a single finger swipe on a UI element and drag nothing then release the finger on the game world,
+the release mouse button event will be processed by the game world and cause a click there even though the
+press event was on the UI element. This makes the character move to that location at the release point.
+Not sure how to fix this yet. We need to somehow know whether we dragged something or not or not use
+an SDL release event at all. Instead, use in-game action requests? We could trigger UILeftMouse release
+only. SDL left release also triggers Action1 release which is what causes the character to move.
+We could also queue an Action1 release event immediately after the SDL left press event, which will
+cancel the Action1 press event as we would still be over a UI element. An Action1 release event will
+still be triggered, but I think it should be useless as it won't be preceded by an Action1 press event.

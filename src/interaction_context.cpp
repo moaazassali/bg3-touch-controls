@@ -4,13 +4,12 @@
 #include <algorithm>
 #include <SDL.h>
 #include <thread>
-
+#include <functional>
 
 #include "pending_camera_updates.h"
 #include "sdl_bindings/sdl_bindings.h"
 #include "reverse/input_manager.h"
 #include "reverse/action_sequences/action_sequences.h"
-#include <functional>
 
 
 extern HINTERACTIONCONTEXT g_hInteractionContext;
