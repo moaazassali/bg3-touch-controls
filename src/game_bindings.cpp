@@ -107,6 +107,7 @@ static void installHooks(uintptr_t start, uintptr_t end)
 	success &= installUpdateCameraPitchHook(start, end);
 	success &= installProcessInputHook(start, end);
 	success &= installUnkConsumesFilteredActionsQueueHook(start, end);
+	success &= installMinimumHotbarRowsPatch(start, end);
 
 	if (success) {
 		std::cout << "All hooks installed successfully." << std::endl;

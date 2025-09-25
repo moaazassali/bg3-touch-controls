@@ -33,6 +33,7 @@ add_library (BG3TouchControls SHARED
 	"src/reverse/action_sequences/swipe_up_sequence.cpp"
 	"src/reverse/action_sequences/swipe_down_sequence.cpp"
 	"src/Hooks/unk_consumes_filtered_actions_queue_hook.cpp"
+	"src/asm_patches/minimum_hotbar_rows_patch.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
