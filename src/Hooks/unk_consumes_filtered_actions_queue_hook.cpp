@@ -10,7 +10,7 @@ namespace reverse {
 }
 
 
-static void detourUnkConsumesFilteredActionsQueue(void* a1, double* a2)
+static void detour_unkConsumesFilteredActionsQueue(void* a1, double* a2)
 {
 	if (!reverse::g_isCursorOverUI) {
 		// The boolean that indicates whether the cursor is over UI is at offset 0x240 of a1
@@ -23,5 +23,5 @@ static void detourUnkConsumesFilteredActionsQueue(void* a1, double* a2)
 bool installUnkConsumesFilteredActionsQueueHook(uintptr_t start, uintptr_t end)
 {
 	uintptr_t targetAddr = start + reverse::offset_unk_consumesFilteredActionsQueue;
-	return installHook((void*)targetAddr, &detourUnkConsumesFilteredActionsQueue, (void**)&original_unk_consumesFilteredActionsQueue, "processInput");
+	return installHook((void*)targetAddr, &detour_unkConsumesFilteredActionsQueue, (void**)&original_unk_consumesFilteredActionsQueue, "unkConsumesFilteredActionsQueueHook");
 }
