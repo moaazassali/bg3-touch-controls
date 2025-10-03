@@ -55,6 +55,32 @@ uintptr_t findPattern(const char* pattern, uintptr_t start, uintptr_t end)
 }
 
 
+bool asmPatchAtOffset(uintptr_t address, std::size_t offset, const std::vector<uint8_t>& bytes, const char* patchName) {
+	uintptr_t targetStart = address + offset;
+	uintptr_t targetEndExclusive = targetStart + bytes.size();
+	uint8_t* bytePtr = reinterpret_cast<uint8_t*>(targetStart);
+
+	// Make the page writable, write the bytes, flush icache, restore protection
+	DWORD oldProtect = 0;
+	if (!VirtualProtect(bytePtr, static_cast<SIZE_T>(bytes.size()), PAGE_EXECUTE_READWRITE, &oldProtect)) {
+		std::cout << "VirtualProtect failed for " << patchName << ": " << GetLastError() << std::endl;
+		return false;
+	}
+
+	std::memcpy(bytePtr, bytes.data(), bytes.size());
+
+	// Ensure CPU sees the change
+	FlushInstructionCache(GetCurrentProcess(), bytePtr, static_cast<SIZE_T>(bytes.size()));
+
+	// Restore original protections
+	DWORD tmp;
+	VirtualProtect(bytePtr, static_cast<SIZE_T>(bytes.size()), oldProtect, &tmp);
+
+	std::cout << "Patched " << patchName << " at 0x" << std::hex << targetStart << std::dec << " (len=" << bytes.size() << ")" << std::endl;
+	return true;
+}
+
+
 // Helper to get module range created by an LLM
 bool getModuleRange(uintptr_t& start, uintptr_t& end)
 {

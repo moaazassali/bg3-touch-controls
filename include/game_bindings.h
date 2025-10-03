@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <windows.h>
+#include <vector>
 
 #include "reverse/functions.h"
 #include "reverse/input_manager.h"
@@ -8,6 +9,7 @@
 // Assumes that MH_Initialize has already been called
 void bindToGame();
 uintptr_t findPattern(const char* pattern, uintptr_t start, uintptr_t end);
+bool asmPatchAtOffset(uintptr_t address, std::size_t offset, const std::vector<uint8_t>& bytes, const char* patchName);
 bool installHook(LPVOID pTarget, LPVOID pDetour, LPVOID* ppOriginal, const char* hookName);
 
 
