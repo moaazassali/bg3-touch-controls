@@ -5,11 +5,13 @@
 #include <SDL.h>
 #include <thread>
 #include <functional>
+#include <chrono>
 
 #include "pending_camera_updates.h"
 #include "sdl_bindings/sdl_bindings.h"
 #include "reverse/input_manager.h"
 #include "reverse/action_sequences/action_sequences.h"
+#include "utils.h"
 
 
 extern HINTERACTIONCONTEXT g_hInteractionContext;
@@ -195,66 +197,6 @@ static void handleUIScroll(int x, int y, float deltaY) {
 }
 
 
-// We could use a separate timer thread with precise timings if needed
-// but this should be good enough for our use case\
-// Since our processing of touch input happens at a rate of 1/60s, we 
-struct TapTimerContext {
-	PTP_TIMER timer;
-	std::function<void()> task;
-};
-
-static VOID CALLBACK TapThreadpoolTimerCallback(
-	PTP_CALLBACK_INSTANCE      /*Instance*/,
-	PVOID                      pv,
-	PTP_TIMER                  pTimer)
-{
-	auto ctx = reinterpret_cast<TapTimerContext*>(pv);
-	if (ctx && ctx->task) {
-		try {
-			ctx->task();
-		}
-		catch (...) {
-			// swallow exceptions in timer callback to avoid terminating the process
-		}
-	}
-
-	// Close and free the timer object.
-	// CloseThreadpoolTimer will wait for outstanding callbacks; calling from the callback
-	// is safe here for a one-shot timer because there are no other callbacks pending.
-	if (pTimer) {
-		CloseThreadpoolTimer(pTimer);
-	}
-	delete ctx;
-}
-
-static void scheduleTask(std::function<void()> task, uint32_t delayMs)
-{
-	auto ctx = new (std::nothrow) TapTimerContext;
-	if (!ctx) {
-		std::cout << "Failed to allocate TapTimerContext for tap click." << std::endl;
-		return;
-	}
-
-	ctx->timer = CreateThreadpoolTimer(TapThreadpoolTimerCallback, ctx, nullptr);
-	ctx->task = std::move(task);
-	if (!ctx->timer) {
-		std::cout << "CreateThreadpoolTimer failed. Error: " << GetLastError() << std::endl;
-		delete ctx;
-		return;
-	}
-
-	// prepare a relative FILETIME: negative 100-ns units. 1ms = 1 * 10,000 * 100-ns
-	LARGE_INTEGER liDue{};
-	liDue.QuadPart = -static_cast<LONGLONG>(delayMs * 10000LL);
-	FILETIME ft{};
-	ft.dwLowDateTime = liDue.LowPart;
-	ft.dwHighDateTime = liDue.HighPart;
-
-	// arm one-shot timer: period = 0, window = 0 (no coalescing window)
-	SetThreadpoolTimer(ctx->timer, &ft, 0, 0);
-}
-
-
 static void CALLBACK interactionContextCallback(void* clientData, const INTERACTION_CONTEXT_OUTPUT2* output) {
 	HWND hwnd = reinterpret_cast<HWND>(clientData);
 
@@ -285,7 +227,7 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		// We will also avoid a lot frustrating and hard-to-debug issues this way where events don't seem to register.
 		// We could make the delay configurable later if needed.
 		auto task = []() {sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);};
-		scheduleTask(task, 10);
+		scheduleTask(task, std::chrono::milliseconds(10));
 		break;
 	}
 	case INTERACTION_ID_HOLD:
@@ -296,7 +238,7 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		if (output->interactionFlags & INTERACTION_FLAG_BEGIN) {
 			sdl_bindings::moveCursor(clientPt.x, clientPt.y);
 			auto task = []() {sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);};
-			scheduleTask(task, 10);
+			scheduleTask(task, std::chrono::milliseconds(10));
 		}
 		break;
 	}
@@ -353,7 +295,7 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 			// which sends a mouse click and causes player movement (i.e. mouse drag behavior on game world).
 			// This seems to be an issue only after swiping over the abilities panel and not all UI elements.
 			// 10 ms seems to be fine.
-			scheduleTask(task, 10);
+			scheduleTask(task, std::chrono::milliseconds(10));
 		}
 		else if (output->contactCount == 2) {
 			// We should also not do any camera movement when we are over UI here.
