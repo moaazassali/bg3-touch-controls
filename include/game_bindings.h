@@ -21,6 +21,10 @@ bool installUnkConsumesFilteredActionsQueueHook(uintptr_t start, uintptr_t end);
 
 bool installMinimumHotbarRowsPatch(uintptr_t start, uintptr_t end);
 
+bool installRegisterHotBarUIBindingsHook(uintptr_t start, uintptr_t end);
+bool installIncreaseHotBarUIBindingHandlersStructSizePatch(uintptr_t start, uintptr_t end);
+bool installRegisterHotBarUIBindingHandlersHook(uintptr_t start, uintptr_t end);
+
 
 extern reverse::getActionRequestsBuffer_t original_getActionRequestsBuffer;
 extern reverse::pushToActionRequestsQueue_t original_pushToActionRequestsQueue;
