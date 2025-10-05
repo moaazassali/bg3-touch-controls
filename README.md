@@ -119,3 +119,6 @@ long but the intention was to rotate/pitch the camera. The controls are too simi
 
 We could also think of handling two/three finger taps and three finger swipes.
 Maybe one to reset the camera instead of using the character UI icon.
+
+
+When using Magic Missle, we need to double tap for some reason to register a single target.
