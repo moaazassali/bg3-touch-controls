@@ -3,6 +3,7 @@
 #include "game_bindings.h"
 #include "sdl_bindings/sdl_bindings.h"
 #include "utils.h"
+#include "reverse/internal_cursor_position.h"
 
 
 // =============================================================
@@ -121,9 +122,13 @@ static void undoMultiTargetCommandHandler(void* a1)
 	// simulate a right click
 	// but we need to make sure the cursor is not over a UI element
 	// top-left corner (0,0) is a good candidate for now
-	std::cout << "[MOD] UndoMultiTargetCommand handler called. Simulating right click at (0,0)." << std::endl;
+	auto prevX = static_cast<int>((*reverse::g_internalCursorPosition)->x);
+	auto prevY = static_cast<int>((*reverse::g_internalCursorPosition)->y);
 	sdl_bindings::moveCursor(0, 0);
-	auto task = []() {sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);};
+	auto task = [prevX, prevY]() {
+		sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
+		sdl_bindings::moveCursor(prevX, prevY);
+		};
 	scheduleTask(task, std::chrono::milliseconds(10));
 }
 
