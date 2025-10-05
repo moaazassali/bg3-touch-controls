@@ -6,11 +6,13 @@
 
 #include "game_bindings.h"
 #include "reverse/functions.h"
+#include "reverse/internal_cursor_position.h"
 
 
 reverse::getActionRequestsBuffer_t original_getActionRequestsBuffer = nullptr;
 reverse::pushToActionRequestsQueue_t original_pushToActionRequestsQueue = nullptr;
 reverse::processActionRequestsQueue_t original_processActionRequestsQueue = nullptr;
+reverse::InternalCursorPosition** reverse::g_internalCursorPosition = nullptr;
 
 
 // Simple pattern scanner created by an LLM
@@ -117,11 +119,12 @@ bool installHook(LPVOID pTarget, LPVOID pDetour, LPVOID* ppOriginal, const char*
 }
 
 
-static void initializeFunctionPointers(uintptr_t start, uintptr_t end)
+static void initializePointers(uintptr_t start, uintptr_t end)
 {
 	original_getActionRequestsBuffer = (reverse::getActionRequestsBuffer_t)(start + reverse::offset_getActionRequestsBuffer);
 	original_pushToActionRequestsQueue = (reverse::pushToActionRequestsQueue_t)(start + reverse::offset_pushToActionRequestsQueue);
 	original_processActionRequestsQueue = (reverse::processActionRequestsQueue_t)(start + reverse::offset_processActionRequestsQueue);
+	reverse::g_internalCursorPosition = (reverse::InternalCursorPosition**)(start + reverse::offset_internalCursorPosition);
 }
 
 
@@ -154,6 +157,6 @@ void bindToGame() {
 		return;
 	}
 
-	initializeFunctionPointers(start, end);
+	initializePointers(start, end);
 	installHooks(start, end);
 }
