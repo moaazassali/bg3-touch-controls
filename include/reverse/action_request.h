@@ -18,9 +18,9 @@ namespace reverse {
 		uint16_t deviceId;
 		uint8_t playerIndex_dup1;
 		uint8_t actionState;
-		float dominantPressValue;
-		float dominantRawValue;
-		bool dominantIsPressed;
+		float prevPressValue;
+		float prevRawValue;
+		bool prevIsPressed;
 		std::byte _pad_01D[3];
 		float currentPressValue;
 		float currentRawValue;
