@@ -5,13 +5,16 @@
 
 namespace reverse {
 	void populateActionPointers(std::span<ActionRequest> seq) {
+		EnterCriticalSection((CRITICAL_SECTION*)reverse::g_inputManager);
 		for (ActionRequest& req : seq) {
 			req.action = getActionById(g_inputManager->actionMap, g_inputManager->actionMapSize, req.actionId);
 		}
+		LeaveCriticalSection((CRITICAL_SECTION*)reverse::g_inputManager);
 	}
 
 
 	void pushSequenceToBuffer(std::span<ActionRequest> seq, uint8_t playerIndex) {
+		EnterCriticalSection((CRITICAL_SECTION*)reverse::g_inputManager);
 		void* actionRequestsBuffer = original_getActionRequestsBuffer(reinterpret_cast<void*>(&g_inputManager->actionBufferManagerStuctStart), &playerIndex);
 		auto q1 = actionRequestsBuffer;
 		auto q2 = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(actionRequestsBuffer) + 0x10);
@@ -28,5 +31,6 @@ namespace reverse {
 				original_pushToActionRequestsQueue(q3, &req);
 			}
 		}
+		LeaveCriticalSection((CRITICAL_SECTION*)reverse::g_inputManager);
 	}
 }
