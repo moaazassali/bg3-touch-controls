@@ -179,6 +179,8 @@ static void handleCameraRotation(float deltaX, INTERACTION_FLAGS interactionFlag
 	sdl_bindings::sendDummyF24KeyUp();
 }
 
+static bool manipulationStartedOverUI = false;
+
 static void CALLBACK interactionContextCallback(void* clientData, const INTERACTION_CONTEXT_OUTPUT2* output) {
 	g_lastInteractionId = output->interactionId;
 	HWND hwnd = reinterpret_cast<HWND>(clientData);
@@ -233,10 +235,21 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		// Does only atomicity matter? Is the performance benefit worth it?
 		if (output->contactCount == 1) {
 			g_hasManipulationUpdateFired = true;
-			static bool startedOverUI = false;
-			sdl_bindings::moveCursor(clientPt.x, clientPt.y);
 			// Similar to the tap case, we need a small delay for the g_isCursorOverUI boolean to be updated correctly
 			// based on the new cursor position.
+			// We also only need to move the cursor at the beginning to determine if we're over UI or not.
+			// And then only if we're starting over UI.
+			// Otherwise, for world manipulations, moving the cursor actually causes unwanted behavior like 
+			// world items and npc hover effects.
+			if (output->interactionFlags & INTERACTION_FLAG_BEGIN) {
+				sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+				// Not really needed but just to be safe, reset the flag here.
+				manipulationStartedOverUI = false;
+			}
+			if (manipulationStartedOverUI) {
+				sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+			}
+
 			auto translationX = output->arguments.manipulation.delta.translationX;
 			auto translationY = output->arguments.manipulation.delta.translationY;
 			auto interactionFlags = output->interactionFlags;
@@ -259,28 +272,29 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 				//
 				// This also helps us avoid doing any camera movement when we are over UI.
 				if (interactionFlags & INTERACTION_FLAG_BEGIN) {
-					if (*reverse::g_isCursorOverUI) {
+					manipulationStartedOverUI = *reverse::g_isCursorOverUI;
+					if (manipulationStartedOverUI) {
 						sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
-						startedOverUI = true;
-					}
-					else {
-						startedOverUI = false;
 					}
 				}
 
-				if (!startedOverUI) {
+				if (!manipulationStartedOverUI) {
 					handleCameraRotation(translationX, interactionFlags);
 					handlePitchUpdate(translationY, interactionFlags);
 				}
 
-				if (interactionFlags & INTERACTION_FLAG_END && startedOverUI) {
+				if (interactionFlags & INTERACTION_FLAG_END && manipulationStartedOverUI) {
 					sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
+					// Needed to prevent moveCursor on next manipulation start
+					manipulationStartedOverUI = false;
 				}
 				};
 			// I tested 1 to 5ms and they all caused some issues where g_isCursorOverUI was true when it shouldn't be,
 			// which sends a mouse click and causes player movement (i.e. mouse drag behavior on game world).
 			// This seems to be an issue only after swiping over the abilities panel and not all UI elements.
 			// 10 ms seems to be fine.
+			// Also I think it has to be under our processing rate because otherwise we can get a manipulation update
+			// before processing the task of the previous manipulation update, which maybe? cause issues.
 			scheduleTask(task, std::chrono::milliseconds(10));
 		}
 		else if (output->contactCount == 2) {
