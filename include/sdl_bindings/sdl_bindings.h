@@ -12,6 +12,7 @@ namespace sdl_bindings {
 	void pressMouseButton(uint8_t button);
 	void releaseMouseButton(uint8_t button);
 	void moveCursorWithWarp(int32_t x, int32_t y);
+	void sendDummyF24KeyUp();	
 
 	using SDL_CreateWindow_t = SDL_Window* (*)(const char* title, int x, int y, int w, int h, Uint32 flags);
 	using SDL_PushEvent_t = int(*)(SDL_Event* event);

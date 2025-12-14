@@ -64,4 +64,17 @@ namespace sdl_bindings {
 		eventUp.button.windowID = original_SDL_GetWindowID(g_gameWindow);
 		original_SDL_PushEvent(&eventUp);
 	}
+
+	void sendDummyF24KeyUp() {
+		SDL_Event event{};
+		event.type = SDL_KEYUP; // Release is technically safer than a press
+		event.key.timestamp = original_SDL_GetTicks();
+		event.key.windowID = original_SDL_GetWindowID(g_gameWindow);
+		event.key.state = SDL_RELEASED;
+		event.key.repeat = 0;
+		// F24 is valid in SDL but practically non-existent on hardware.
+		event.key.keysym.scancode = SDL_SCANCODE_F24;
+		event.key.keysym.sym = SDLK_F24;
+		original_SDL_PushEvent(&event);
+	}
 }
