@@ -143,7 +143,7 @@ static void installHooks(uintptr_t start, uintptr_t end)
 	success &= installIncreaseHotBarUIBindingHandlersStructSizePatch(start, end);
 	success &= installRegisterHotBarUIBindingHandlersHook(start, end);
 	//success &= installPushToActionRequestsQueueHook(start, end);
-	success &= installFilterPreFinalActionsQueueHook(start, end);
+	//success &= installFilterPreFinalActionsQueueHook(start, end);
 
 	if (success) {
 		std::cout << "All hooks installed successfully." << std::endl;
