@@ -66,4 +66,12 @@ namespace reverse {
 	// a2 might be the cursor coordinates.
 	using unk_consumesFilteredActionsQueue_t = void(*)(void* a1, double* a2);
 	constexpr const uintptr_t offset_unk_consumesFilteredActionsQueue = 0x120C620;
+
+	// This also consumes some pre-final? filtered actions queue and dispatches them to a more final queue.
+	// a1 is some big singleton pointer.
+	// a2 is some struct this function fills out which ends up being an action request + maybe some flag and a pointer
+	// a3 is a pointer to action requests queue struct
+	// This can be used for debugging to check what actions end up in this pre-final queue.
+	using filterPreFinalActionsQueue_t = void* (*)(void* a1, void* a2, void* a3);
+	constexpr const uintptr_t offset_filterPreFinalActionsQueue = 0x12108F0;
 }
