@@ -37,6 +37,9 @@ add_library (BG3TouchControls SHARED
 	"src/utils.cpp"
 	"src/game_patches/register_undo_multi_target_command.cpp"
 	"src/Hooks/debug_hooks.cpp"
+	"src/reverse/action_sequences/world_swipe_right_sequence.cpp"
+	"src/reverse/action_sequences/world_swipe_left_sequence.cpp"
+	"src/reverse/action_sequences/world_swipe_toggle_sequence.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")

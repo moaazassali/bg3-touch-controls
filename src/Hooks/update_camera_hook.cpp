@@ -9,45 +9,6 @@
 reverse::updateCamera_t original_updateCamera = nullptr;
 
 
-static void handleAngleDeltaUpdate(reverse::CameraObject* cam, float deltaTimeSeconds) {
-	if (g_pendingCameraUpdates.angleInertiaState.load() == InertiaState::InertiaStart) {
-		// On the first frame of inertia, we set any pending angleDelta to currentAngleDelta
-		// This ensures that if the user swiped and then lifted their finger, the velocity
-		// of the swipe is taken into account for the inertia.
-		// In many cases, cam->currentAngleDelta will be 0.0f at this point because we already
-		// consumed the angleDelta in the previous frame when not in inertia mode.
-		// So we need to make sure we have the initial value to start the inertia from.
-		// Otherwise, currentAngleDelta will start from 0 and do nothing.
-		// If it was not 0, that means the user swiped again while inertia was ongoing, so we
-		// still need to remove the previous angleDelta value and use the new one.
-		cam->currentAngleDelta = g_pendingCameraUpdates.angleDelta.exchange(0.0f);
-		g_pendingCameraUpdates.angleInertiaState.store(InertiaState::InInertia);
-	}
-	else if (g_pendingCameraUpdates.angleInertiaState.load() == InertiaState::InInertia) {
-		constexpr float inertiaDecayFactor = 10.0f;
-		// multiply by deltaTimeSeconds to make it frame rate independent
-		cam->currentAngleDelta *= 1 - inertiaDecayFactor * deltaTimeSeconds;
-		if (std::abs(cam->currentAngleDelta) < 0.1f) {
-			cam->currentAngleDelta = 0.0f;
-			g_pendingCameraUpdates.angleInertiaState.store(InertiaState::NotInInertia);
-		}
-	}
-	else {
-		// We will use the amount of angleDelta as a measure of how fast we want to rotate.
-		// This makes sense since angleDelta is based on how far the user moved their finger
-		// within a frame, which is a measure of speed.
-		// I attempted adjusting camer angle directly first but it didn't work well.
-		// The range of the angle field is from (-360, 360) according to testing.
-		// But how do you represent a fast rotation with that and especially one that involves
-		// possibly multiple full rotations in one frame (unlikely)?
-		// Although this exact logic of trying to update angle was causing sudden camera jumps
-		// for fast swipes and jittery behavior The rotation somehow didn't always change just 
-		// the axis we want but seemed to affect axes?
-		cam->currentAngleDelta = g_pendingCameraUpdates.angleDelta.exchange(0.0f);
-	}
-}
-
-
 // Based on manual testing, this is called on every frame and is tied to the frame rate.
 static void detour_updateCamera(uint64_t a1, uint64_t a2, reverse::DeltaTimeObject* a3, reverse::UnkObject* a4)
 {
@@ -60,8 +21,6 @@ static void detour_updateCamera(uint64_t a1, uint64_t a2, reverse::DeltaTimeObje
 		// user input adds.
 		// For now we assume only one input mode (touch).
 		auto cam = a4->currentCameraObject;
-
-		handleAngleDeltaUpdate(cam, a3->deltaTimeSeconds);
 
 		const auto xPanDelta = g_pendingCameraUpdates.xPanDelta.exchange(0.0f);
 		const auto yPanDelta = g_pendingCameraUpdates.yPanDelta.exchange(0.0f);

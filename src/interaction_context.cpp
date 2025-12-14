@@ -17,6 +17,15 @@
 extern HINTERACTIONCONTEXT g_hInteractionContext;
 PendingCameraUpdates g_pendingCameraUpdates;
 
+// These two global variables are needed to detect the case where a manipulation
+// is still ongoing but the contact isn't moving anymore.
+// This happens when the user is holding their finger still on the screen during a manipulation.
+// The interaction context won't fire any ManipulationUpdate events in this case, and we sometimes
+// need to handle this case to send zero deltas to stop any ongoing movements like stopping the
+// camera rotation.
+bool g_hasManipulationUpdateFired = false;
+INTERACTION_ID g_lastInteractionId = INTERACTION_ID_NONE;
+
 
 // https://learn.microsoft.com/en-us/windows/win32/api/interactioncontext/ne-interactioncontext-interaction_id
 // https://learn.microsoft.com/en-us/windows/win32/api/interactioncontext/ne-interactioncontext-interaction_configuration_flags
@@ -41,68 +50,6 @@ static const INTERACTION_CONTEXT_CONFIGURATION config[] = {
 		INTERACTION_CONFIGURATION_FLAG_MANIPULATION_SCALING
 	}
 };
-
-
-// store last 5 translationX deltas to smooth out the inertia start
-float lastFiveAngleDeltas[5] = { 0.0f };
-
-static void handleAngleDeltaUpdate(const float rawDelta, const INTERACTION_FLAGS interactionFlags) {
-	// We should make rotationFactor based on window width I think? and also configurable.
-	constexpr float rotationFactor = 0.25f;
-	// invert for natural feel. Make configurable.
-	auto angleDelta = -rawDelta * rotationFactor;
-	// clamp maximum angleDelta to avoid sudden large jumps
-	angleDelta = std::clamp(angleDelta, -15.0f, 15.0f);
-
-	if (interactionFlags & INTERACTION_FLAG_BEGIN) {
-		// If we are starting a new manipulation, we should stop any ongoing inertia
-		g_pendingCameraUpdates.angleDelta.store(0);
-		g_pendingCameraUpdates.angleInertiaState.store(InertiaState::NotInInertia);
-		// reset last five deltas
-		for (auto& delta : lastFiveAngleDeltas) {
-			delta = 0.0f;
-		}
-		g_pendingCameraUpdates.angleDelta.store(angleDelta);
-	}
-	else if (interactionFlags & INTERACTION_FLAG_END) {
-		// On lifting the finger, we should rotate the camera a bit based on the velocity (i.e. add some inertia)
-
-		// Average the last 5 deltas to smooth out the inertia start
-		// This doesn't include the current angleDelta, which is good because that is often 0.0f
-		float sum = 0.0f;
-		for (const auto& delta : lastFiveAngleDeltas) {
-			sum += delta;
-		}
-
-		constexpr float initialInertiaAngleDeltaFactor = 0.25f;
-		const float angleDeltaAverage = sum / 5.0f;
-		const float initialInertiaAngleDelta = angleDeltaAverage * initialInertiaAngleDeltaFactor;
-		// we multiply it by both rotationFactor and initialInertiaAngleDeltaFactor to make the comparison
-		// fair and independent since initialInertiaAngleDelta is already scaled by initialInertiaAngleDeltaFactor
-		// and rotationFactor because angleDeltaAverage is based on angleDelta which is scaled by rotationFactor.
-		// This makes the inertiaActivationThreshold basically the threshold of translationX delta we consider significant enough
-		constexpr float inertiaActivationThreshold = 5.0f * rotationFactor * initialInertiaAngleDeltaFactor;
-
-		if (initialInertiaAngleDelta > inertiaActivationThreshold || initialInertiaAngleDelta < -inertiaActivationThreshold)
-		{
-			// These assignments should ideally be atomic together, but it should be much faster than the frame rate anyway
-			g_pendingCameraUpdates.angleDelta.store(initialInertiaAngleDelta);
-			// Needed in case we start a new inertia while another is ongoing.
-			// If not set, the first frame of the new inertia won't take effect since any code relying on setting the initial
-			// "velocity" of the inertia to dampen it gradually won't run.
-			g_pendingCameraUpdates.angleInertiaState.store(InertiaState::InertiaStart);
-		}
-	}
-	else {
-		g_pendingCameraUpdates.angleDelta.fetch_add(angleDelta);
-	}
-
-	// store last 5 translationX deltas for inertia calculation
-	for (int i = 4; i > 0; --i) {
-		lastFiveAngleDeltas[i] = lastFiveAngleDeltas[i - 1];
-	}
-	lastFiveAngleDeltas[0] = angleDelta;
-}
 
 
 const auto prevDeltasCount = 7;
@@ -197,7 +144,43 @@ static void handleUIScroll(int x, int y, float deltaY) {
 }
 
 
+static void handleCameraRotation(float deltaX, INTERACTION_FLAGS interactionFlags) {
+	constexpr float rotationScaleFactor = 0.5f;
+	auto isSwipingRight = deltaX >= 0;
+	auto strength = std::abs(deltaX * rotationScaleFactor);
+
+	if (interactionFlags & INTERACTION_FLAG_BEGIN) {
+		auto seq3 = reverse::getWorldSwipeToggleSequence(true);
+		reverse::populateActionPointers(seq3);
+		reverse::pushSequenceToBuffer(seq3, 0);
+	}
+	else if (interactionFlags & INTERACTION_FLAG_END || interactionFlags & INTERACTION_FLAG_CANCEL) {
+		auto seq1 = reverse::getWorldSwipeToggleSequence(false);
+		reverse::populateActionPointers(seq1);
+		reverse::pushSequenceToBuffer(seq1, 0);
+		// Send zero-strength releases to stop any ongoing swipe actions
+		// Doesn't hurt to be safe here.
+		auto seq2 = reverse::getWorldSwipeRightSequence(0.0f, 0.0f, false);
+		reverse::populateActionPointers(seq2);
+		reverse::pushSequenceToBuffer(seq2, 0);
+		auto seq3 = reverse::getWorldSwipeLeftSequence(0.0f, 0.0f, false);
+		reverse::populateActionPointers(seq3);
+		reverse::pushSequenceToBuffer(seq3, 0);
+	}
+	else {
+		auto seq = isSwipingRight ?
+			reverse::getWorldSwipeRightSequence(strength, deltaX, false) :
+			reverse::getWorldSwipeLeftSequence(strength, deltaX, false);
+		reverse::populateActionPointers(seq);
+		reverse::pushSequenceToBuffer(seq, 0);
+	}
+
+	// Similar to the scroll case, we need to send a hardware event to ensure the game processes the action requests queue.
+	sdl_bindings::sendDummyF24KeyUp();
+}
+
 static void CALLBACK interactionContextCallback(void* clientData, const INTERACTION_CONTEXT_OUTPUT2* output) {
+	g_lastInteractionId = output->interactionId;
 	HWND hwnd = reinterpret_cast<HWND>(clientData);
 
 	POINT clientPt = { static_cast<LONG>(output->x), static_cast<LONG>(output->y) };
@@ -249,6 +232,7 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		// Think about the memory ordering and atomicity here later
 		// Does only atomicity matter? Is the performance benefit worth it?
 		if (output->contactCount == 1) {
+			g_hasManipulationUpdateFired = true;
 			static bool startedOverUI = false;
 			sdl_bindings::moveCursor(clientPt.x, clientPt.y);
 			// Similar to the tap case, we need a small delay for the g_isCursorOverUI boolean to be updated correctly
@@ -283,14 +267,16 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 						startedOverUI = false;
 					}
 				}
+
 				if (!startedOverUI) {
-					handleAngleDeltaUpdate(translationX, interactionFlags);
+					handleCameraRotation(translationX, interactionFlags);
 					handlePitchUpdate(translationY, interactionFlags);
 				}
+
 				if (interactionFlags & INTERACTION_FLAG_END && startedOverUI) {
 					sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
 				}
-			};
+				};
 			// I tested 1 to 5ms and they all caused some issues where g_isCursorOverUI was true when it shouldn't be,
 			// which sends a mouse click and causes player movement (i.e. mouse drag behavior on game world).
 			// This seems to be an issue only after swiping over the abilities panel and not all UI elements.

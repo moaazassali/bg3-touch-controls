@@ -10,12 +10,10 @@ enum class InertiaState {
 };
 
 struct PendingCameraUpdates {
-	std::atomic<float> angleDelta{ 0.0f };
 	std::atomic<float> zoomDelta{ 0.0f };
 	std::atomic<float> xPanDelta{ 0.0f };
 	std::atomic<float> yPanDelta{ 0.0f };
 	std::atomic<float> pitchDelta{ 0.0f };
-	std::atomic<InertiaState> angleInertiaState{ InertiaState::NotInInertia };
 	std::atomic<InertiaState> pitchInertiaState{ InertiaState::NotInInertia };
 };
 

@@ -5,8 +5,50 @@
 #include <chrono>
 #include <iostream>
 
+#include "reverse/action_sequences/action_sequences.h"
+#include "sdl_bindings/sdl_bindings.h"
+
+
 extern WNDPROC g_originalWndProc;
 extern HINTERACTIONCONTEXT g_hInteractionContext;
+extern bool g_hasManipulationUpdateFired;
+extern INTERACTION_ID g_lastInteractionId;
+
+
+// Refactor: Extract common logic with interaction_context.cpp
+static void handleCameraRotation(float deltaX, INTERACTION_FLAGS interactionFlags) {
+	constexpr float rotationScaleFactor = 0.25f;
+	auto isSwipingRight = deltaX >= 0;
+	auto strength = std::abs(deltaX * rotationScaleFactor);
+
+	if (interactionFlags & INTERACTION_FLAG_BEGIN) {
+		auto seq3 = reverse::getWorldSwipeToggleSequence(true);
+		reverse::populateActionPointers(seq3);
+		reverse::pushSequenceToBuffer(seq3, 0);
+	}
+	else if (interactionFlags & INTERACTION_FLAG_END || interactionFlags & INTERACTION_FLAG_CANCEL) {
+		auto seq1 = reverse::getWorldSwipeToggleSequence(false);
+		reverse::populateActionPointers(seq1);
+		reverse::pushSequenceToBuffer(seq1, 0);
+		auto seq2 = reverse::getWorldSwipeRightSequence(0.0f, 0.0f, false);
+		reverse::populateActionPointers(seq2);
+		reverse::pushSequenceToBuffer(seq2, 0);
+		auto seq3 = reverse::getWorldSwipeLeftSequence(0.0f, 0.0f, false);
+		reverse::populateActionPointers(seq3);
+		reverse::pushSequenceToBuffer(seq3, 0);
+	}
+	else {
+		auto seq = isSwipingRight ?
+			reverse::getWorldSwipeRightSequence(strength, deltaX, false) :
+			reverse::getWorldSwipeLeftSequence(strength, deltaX, false);
+		reverse::populateActionPointers(seq);
+		reverse::pushSequenceToBuffer(seq, 0);
+	}
+
+	// Similar to the scroll case, we need to send a hardware event to ensure the game processes the action requests queue.
+	sdl_bindings::sendDummyF24KeyUp();
+}
+
 
 static void processBufferedPacketsIfReady() {
 	// We will update the camera state at most 60 times per second
@@ -17,8 +59,18 @@ static void processBufferedPacketsIfReady() {
 	auto now = clock::now();
 	constexpr auto minInterval = std::chrono::duration<double>(1.0 / 60.0); // ~16.6667 ms
 	if (now - lastTime >= minInterval) {
+		g_hasManipulationUpdateFired = false;
+
 		if FAILED(ProcessBufferedPacketsInteractionContext(g_hInteractionContext)) {
 			std::cout << "Failed to process buffered packets." << std::endl;
+		}
+
+		if (g_lastInteractionId == INTERACTION_ID_MANIPULATION && !g_hasManipulationUpdateFired) {
+			// No manipulation update was fired in this processing cycle despite the last interaction being a manipulation.
+			// This indicates that the manipulation is ongoing but without movement
+			// (i.e., the user is holding their finger(s) still on the screen).
+			// We need to handle this case to send zero deltas to stop any ongoing movements.
+			handleCameraRotation(0.0f, INTERACTION_FLAG_NONE);
 		}
 		lastTime = now;
 	}
