@@ -276,6 +276,11 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 					if (manipulationStartedOverUI) {
 						sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
 					}
+					else {
+						// Move cursor offscreen to avoid hover effects at wherever the cursor ends up
+						// being due to the initial moveCursor call at the beginning of the manipulation.
+						sdl_bindings::moveCursor(-10000, -10000);
+					}
 				}
 
 				if (!manipulationStartedOverUI) {
