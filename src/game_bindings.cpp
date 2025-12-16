@@ -119,7 +119,7 @@ bool installHook(LPVOID pTarget, LPVOID pDetour, LPVOID* ppOriginal, const char*
 	return true;
 }
 
-
+	
 static void initializePointers(uintptr_t start, uintptr_t end)
 {
 	original_getActionRequestsBuffer = (reverse::getActionRequestsBuffer_t)(start + reverse::offset_getActionRequestsBuffer);
@@ -144,6 +144,7 @@ static void installHooks(uintptr_t start, uintptr_t end)
 	success &= installRegisterHotBarUIBindingHandlersHook(start, end);
 	//success &= installPushToActionRequestsQueueHook(start, end);
 	//success &= installFilterPreFinalActionsQueueHook(start, end);
+	success &= installDX11PresentHook();
 
 	if (success) {
 		std::cout << "All hooks installed successfully." << std::endl;
