@@ -40,6 +40,7 @@ add_library (BG3TouchControls SHARED
 	"src/reverse/action_sequences/world_swipe_right_sequence.cpp"
 	"src/reverse/action_sequences/world_swipe_left_sequence.cpp"
 	"src/reverse/action_sequences/world_swipe_toggle_sequence.cpp"
+	"src/joystick/dx11_present_hook.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
@@ -67,3 +68,30 @@ FetchContent_Populate(
 )
 # Your existing target_include_directories call will work perfectly with this
 target_include_directories(BG3TouchControls PUBLIC "${sdl2_SOURCE_DIR}/include")
+
+# === ImGui Integration (LLM generated; not carefully checked but it works) ===
+# Add ImGui repo
+FetchContent_Declare(
+	imgui
+	GIT_REPOSITORY https://github.com/ocornut/imgui.git
+	GIT_TAG        docking # 'docking' branch is standard for mods/overlays, 'master' is fine too
+)
+FetchContent_MakeAvailable(imgui)
+# Create a static library for ImGui so we don't clutter the main target
+# We include the Core files AND the DX11/Win32 Backends
+add_library(imgui STATIC
+    "${imgui_SOURCE_DIR}/imgui.cpp"
+    "${imgui_SOURCE_DIR}/imgui_draw.cpp"
+    "${imgui_SOURCE_DIR}/imgui_tables.cpp"
+    "${imgui_SOURCE_DIR}/imgui_widgets.cpp"
+    "${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp"
+    "${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp"
+)
+# Allow ImGui to find its own headers and the backend headers
+target_include_directories(imgui PUBLIC 
+    "${imgui_SOURCE_DIR}" 
+    "${imgui_SOURCE_DIR}/backends"
+)
+# ImGui DX11 backend requires these system libraries
+target_link_libraries(imgui PRIVATE d3d11)
+target_link_libraries(BG3TouchControls PRIVATE imgui)
