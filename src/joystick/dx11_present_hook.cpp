@@ -6,6 +6,8 @@
 typedef HRESULT(__stdcall* IDXGISwapChainPresent)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
 IDXGISwapChainPresent original_DX11Present = nullptr;
 
+HRESULT __stdcall detour_DX11Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
+
 // The index for Present in IDXGISwapChain is always 8
 constexpr int PE_PRESENT_INDEX = 8;
 
@@ -97,12 +99,6 @@ static void* GetDX11PresentAddress()
     UnregisterClassW(wc.lpszClassName, wc.hInstance);
 
     return pPresentAddress;
-}
-
-
-static HRESULT __stdcall detour_DX11Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags)
-{
-    return original_DX11Present(pSwapChain, SyncInterval, Flags);
 }
 
 
