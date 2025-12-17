@@ -12,6 +12,7 @@
 #include "reverse/input_manager.h"
 #include "reverse/action_sequences/action_sequences.h"
 #include "utils.h"
+#include "joystick/joystick.h"
 
 
 extern HINTERACTIONCONTEXT g_hInteractionContext;
@@ -256,7 +257,7 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 
 			// Technically not thread safe because of the array access, but we all our calls should always happen in order
 			// one by one. So, it should be fine for now. Implement mutex later.
-			auto task = [translationX, translationY, interactionFlags]() {
+			auto task = [translationX, translationY, interactionFlags, clientPt]() {
 				// Sending action requests of UI press and moving the cursor doesn't seem to activate the drag and drop behavior.
 				// However, sending an initial mouse press makes it work, so there might be some flag somewhere that gets set
 				// regarding mouse state independent of action requests, or we maybe have an issue with our UI press action
@@ -280,18 +281,23 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 						// Move cursor offscreen to avoid hover effects at wherever the cursor ends up
 						// being due to the initial moveCursor call at the beginning of the manipulation.
 						sdl_bindings::moveCursor(-10000, -10000);
+						activateJoystick(clientPt.x, clientPt.y);
 					}
 				}
 
 				if (!manipulationStartedOverUI) {
 					handleCameraRotation(translationX, interactionFlags);
 					handlePitchUpdate(translationY, interactionFlags);
+					moveJoystick(translationX, translationY);
 				}
 
 				if (interactionFlags & INTERACTION_FLAG_END && manipulationStartedOverUI) {
 					sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
 					// Needed to prevent moveCursor on next manipulation start
 					manipulationStartedOverUI = false;
+				}
+				if (interactionFlags & INTERACTION_FLAG_END) {
+					releaseJoystick();
 				}
 				};
 			// I tested 1 to 5ms and they all caused some issues where g_isCursorOverUI was true when it shouldn't be,
