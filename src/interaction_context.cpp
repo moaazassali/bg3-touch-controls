@@ -281,14 +281,18 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 						// Move cursor offscreen to avoid hover effects at wherever the cursor ends up
 						// being due to the initial moveCursor call at the beginning of the manipulation.
 						sdl_bindings::moveCursor(-10000, -10000);
-						activateJoystick(clientPt.x, clientPt.y);
+						activateJoystick((float)clientPt.x, (float)clientPt.y);
 					}
 				}
 
 				if (!manipulationStartedOverUI) {
-					handleCameraRotation(translationX, interactionFlags);
-					handlePitchUpdate(translationY, interactionFlags);
-					moveJoystick(translationX, translationY);
+					if (g_joystickState.isActive) {
+						moveJoystick(translationX, translationY);
+					}
+					else {
+						handleCameraRotation(translationX, interactionFlags);
+						handlePitchUpdate(translationY, interactionFlags);
+					}
 				}
 
 				if (interactionFlags & INTERACTION_FLAG_END && manipulationStartedOverUI) {
