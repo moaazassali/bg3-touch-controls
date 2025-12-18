@@ -4,6 +4,7 @@
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
 #include <algorithm>
+#include <iostream>
 
 #include "joystick/joystick.h"
 
@@ -63,6 +64,12 @@ static float calculateJoystickRadius(float windowWidth, float windowHeight)
 
 void activateJoystick(float startX, float startY)
 {
+	// only activate joystick if the activation position is on the left half of the screen
+	auto& io = ImGui::GetIO();
+	if (startX > io.DisplaySize.x * 0.5f * io.DisplayFramebufferScale.x) {
+		return;
+	}
+
 	g_joystickState.isActive = true;
 	g_joystickState.posX = startX;
 	g_joystickState.posY = startY;
@@ -123,34 +130,38 @@ HRESULT __stdcall detour_DX11Present(IDXGISwapChain* pSwapChain, UINT SyncInterv
 		return original_DX11Present(pSwapChain, SyncInterval, Flags);
 	}
 
-	if (!g_joystickState.isActive) {
-		return original_DX11Present(pSwapChain, SyncInterval, Flags);
-	}
-
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	// We use GetBackgroundDrawList to draw directly on the screen without a window background
-	ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+	// Only the draw logic happens if the joystick is active
+	// You could ask why not also skip everything else and call original_DX11Present directly?
+	// The reason is that some fields like io.DisplaySize will be uninitialized if we skip the ImGui NewFrame calls
+	// For instance, io.DisplaySize.x will be -1, so we can't conditionally activate the joystick based on that in
+	// activateJoystick().
+	if (g_joystickState.isActive) {
 
-	constexpr int circleSegments = 64;
-	constexpr float circleThickness = 5.0f;
-	constexpr float innerCircleRadiusFactor = 0.90f;
-	constexpr auto circleOutlineColor = IM_COL32(96, 80, 70, 255);
-	constexpr auto circleFillColor = IM_COL32(96, 80, 70, 128);
+		// We use GetBackgroundDrawList to draw directly on the screen without a window background
+		ImDrawList* drawList = ImGui::GetBackgroundDrawList();
 
-	auto& io = ImGui::GetIO();
-	auto center = ImVec2(g_joystickState.posX / io.DisplayFramebufferScale.x, g_joystickState.posY / io.DisplayFramebufferScale.y);
-	// Joystick radius in logical coordinates
-	float radius = calculateJoystickRadius(io.DisplaySize.x, io.DisplaySize.y);
-	drawList->AddCircle(center, radius, circleOutlineColor, circleSegments, circleThickness);
+		constexpr int circleSegments = 64;
+		constexpr float circleThickness = 5.0f;
+		constexpr float innerCircleRadiusFactor = 0.90f;
+		constexpr auto circleOutlineColor = IM_COL32(96, 80, 70, 255);
+		constexpr auto circleFillColor = IM_COL32(96, 80, 70, 128);
 
-	auto innerCircleCenter = ImVec2(
-		(center.x + g_joystickState.strengthX * radius) / io.DisplayFramebufferScale.x,
-		(center.y + g_joystickState.strengthY * radius) / io.DisplayFramebufferScale.y
-	);
-	drawList->AddCircleFilled(innerCircleCenter, radius * innerCircleRadiusFactor, circleFillColor, circleSegments);
+		auto& io = ImGui::GetIO();
+		auto center = ImVec2(g_joystickState.posX / io.DisplayFramebufferScale.x, g_joystickState.posY / io.DisplayFramebufferScale.y);
+		// Joystick radius in logical coordinates
+		float radius = calculateJoystickRadius(io.DisplaySize.x, io.DisplaySize.y);
+		drawList->AddCircle(center, radius, circleOutlineColor, circleSegments, circleThickness);
+
+		auto innerCircleCenter = ImVec2(
+			(center.x + g_joystickState.strengthX * radius) / io.DisplayFramebufferScale.x,
+			(center.y + g_joystickState.strengthY * radius) / io.DisplayFramebufferScale.y
+		);
+		drawList->AddCircleFilled(innerCircleCenter, radius * innerCircleRadiusFactor, circleFillColor, circleSegments);
+	}
 
 	ImGui::Render();
 
