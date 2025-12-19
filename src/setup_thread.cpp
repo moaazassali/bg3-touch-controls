@@ -14,6 +14,7 @@ void initializeInteractionContext(HWND hwnd);
 
 WNDPROC g_originalWndProc = nullptr; // Store original window procedure
 HINTERACTIONCONTEXT g_hInteractionContext;
+HWND g_gameHwnd = nullptr;
 
 static void createConsole()
 {
@@ -81,9 +82,9 @@ DWORD WINAPI setupThread(LPVOID lpParam)
 		return 0;
 	}
 	sdl_bindings::bindToSDL();
-	HWND hGameWnd = findMainWindowForCurrentProcess();
-	subclassGameWindow(hGameWnd);
-	initializeInteractionContext(hGameWnd);
+	g_gameHwnd = findMainWindowForCurrentProcess();
+	subclassGameWindow(g_gameHwnd);
+	initializeInteractionContext(g_gameHwnd);
 	bindToGame();
 
 	std::cout << "\n--- Press any key to close. ---" << std::endl;
