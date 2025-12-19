@@ -100,7 +100,20 @@ private:
 	TouchInputState* findFreeState();
 	void updateTouchInputState(TouchInputState& state, const TouchInputEvent& input);
 
+	// Private constructor to prevent instantiation
+	TouchHandler() = default;
+
 public:
+	// Delete copy constructor and assignment operator
+	TouchHandler(const TouchHandler&) = delete;
+	TouchHandler& operator=(const TouchHandler&) = delete;
+
+	// Get singleton instance
+	static TouchHandler& getSingleton() {
+		static TouchHandler instance;
+		return instance;
+	}
+
 	struct GestureEventsResult {
 		// If the time frame of checking gestures is larger than HOLD_THRESHOLD,
 		// then it is possible to miss the exact moment the hold is recognized and

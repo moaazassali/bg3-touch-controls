@@ -14,7 +14,6 @@ extern WNDPROC g_originalWndProc;
 extern HINTERACTIONCONTEXT g_hInteractionContext;
 extern bool g_hasManipulationUpdateFired;
 extern INTERACTION_ID g_lastInteractionId;
-TouchHandler g_touchHandler;
 
 
 // Refactor: Extract common logic with interaction_context.cpp
@@ -76,7 +75,7 @@ static void processBufferedPacketsIfReady() {
 		}
 		lastTime = now;
 
-		auto gestures = g_touchHandler.getGestureEvents();
+		auto gestures = TouchHandler::getSingleton().getGestureEvents();
 		for (int i = 0; i < gestures.count; ++i) {
 			std::cout << "Detected gesture: " << gestures.events[i].type << std::endl;
 		}
@@ -97,7 +96,7 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 				std::cout << "Failed to buffer pointer packet in WM_POINTERDOWN." << std::endl;
 			}
 
-			g_touchHandler.addTouchInputEvent(TouchInputEvent{
+			TouchHandler::getSingleton().addTouchInputEvent(TouchInputEvent{
 				.id = pointerId,
 				.x = pointerInfo.ptPixelLocation.x,
 				.y = pointerInfo.ptPixelLocation.y,
@@ -116,7 +115,7 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 				std::cout << "Failed to buffer pointer packet in WM_POINTERUPDATE." << std::endl;
 			}
 
-			g_touchHandler.addTouchInputEvent(TouchInputEvent{
+			TouchHandler::getSingleton().addTouchInputEvent(TouchInputEvent{
 				.id = pointerId,
 				.x = pointerInfo.ptPixelLocation.x,
 				.y = pointerInfo.ptPixelLocation.y,
@@ -162,7 +161,7 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 				std::cout << "Failed to remove pointer in WM_POINTERUP." << std::endl;
 			}
 
-			g_touchHandler.addTouchInputEvent(TouchInputEvent{
+			TouchHandler::getSingleton().addTouchInputEvent(TouchInputEvent{
 				.id = pointerId,
 				.x = pointerInfo.ptPixelLocation.x,
 				.y = pointerInfo.ptPixelLocation.y,
@@ -178,7 +177,7 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 			// 
 			// Maybe we should have a function that keeps running on its own thread to process buffered packets at a fixed rate
 			// instead of relying on input events to trigger the processing?
-			auto gestures = g_touchHandler.getGestureEvents();
+			auto gestures = TouchHandler::getSingleton().getGestureEvents();
 			for (int i = 0; i < gestures.count; ++i) {
 				std::cout << "Detected gesture: " << gestures.events[i].type << std::endl;
 			}
