@@ -64,12 +64,6 @@ static float calculateJoystickRadius(float windowWidth, float windowHeight)
 
 void activateJoystick(float startX, float startY)
 {
-	// only activate joystick if the activation position is on the left half of the screen
-	auto& io = ImGui::GetIO();
-	if (startX > io.DisplaySize.x * 0.5f * io.DisplayFramebufferScale.x) {
-		return;
-	}
-
 	g_joystickState.isActive = true;
 	g_joystickState.posX = startX;
 	g_joystickState.posY = startY;

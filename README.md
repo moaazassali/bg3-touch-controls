@@ -122,3 +122,7 @@ Maybe one to reset the camera instead of using the character UI icon.
 
 
 When using Magic Missle, we need to double tap for some reason to register a single target.
+
+
+We might want to cache some window properties like size and position to avoid querying them with calls like
+GetWindowRect() and ScreenToClient() too often if they are adding some overhead.

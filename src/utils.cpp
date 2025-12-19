@@ -66,3 +66,13 @@ void scheduleTask(std::function<void()> task, std::chrono::milliseconds delay)
 	// arm one-shot timer: period = 0, window = 0 (no coalescing window)
 	SetThreadpoolTimer(ctx->timer, &ft, 0, 0);
 }
+
+
+SIZE getWindowSizePx(HWND hwnd)
+{
+	RECT rect;
+	if (!GetClientRect(hwnd, &rect)) {
+		return { 0, 0 };
+	}
+	return { rect.right - rect.left, rect.bottom - rect.top };
+}

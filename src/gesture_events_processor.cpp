@@ -79,8 +79,13 @@ static void processDrag(const GestureEvent& event, POINT clientPt) {
 			else {
 				// Move cursor offscreen to avoid hover effects due to our moveCursor call above.
 				sdl_bindings::moveCursor(-10000, -10000);
-				auto& dragData = std::get<DragData>(event.data);
-				activateJoystick((float)(clientPt.x - dragData.deltaX), (float)(clientPt.y - dragData.deltaY));
+
+				// Joystick activation area is left half of the screen
+				auto windowSize = getWindowSizePx(g_gameHwnd);
+				if (clientPt.x < windowSize.cx / 2) {
+					auto& dragData = std::get<DragData>(event.data);
+					activateJoystick((float)(clientPt.x - dragData.deltaX), (float)(clientPt.y - dragData.deltaY));
+				}
 			}
 		}
 
