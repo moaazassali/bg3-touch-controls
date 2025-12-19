@@ -1,4 +1,5 @@
 #include <chrono>
+#include <variant>
 
 
 enum TouchPhase {
@@ -26,12 +27,19 @@ enum GestureType {
 };
 
 
+struct DragData {
+	int deltaX;
+	int deltaY;
+};
+
+
 struct GestureEvent {
 	uint32_t touchInputId;
 	GestureType type;
 	TouchPhase phase;
 	int x;
 	int y;
+	std::variant<std::monostate, DragData> data;
 };
 
 
@@ -65,6 +73,10 @@ private:
 		bool exceededTapSlop = false;
 		bool reachedHoldThreshold = false;
 		bool sentInitialHoldEvent = false;
+		// For drag delta calculations.
+		// Position of last gesture event reported, not last touch input update.
+		int lastConsumedX = -1;
+		int lastConsumedY = -1;
 	};
 	TouchInputState touchInputStates[MAX_STATES];
 
@@ -169,6 +181,8 @@ public:
 				freeState->exceededTapSlop = false;
 				freeState->reachedHoldThreshold = false;
 				freeState->sentInitialHoldEvent = false;
+				freeState->lastConsumedX = input.x;
+				freeState->lastConsumedY = input.y;
 			}
 			else {
 				// MAX_STATES reached, ignore the new touch input
@@ -220,6 +234,20 @@ public:
 			result.events[result.count].phase = state.phase;
 			result.events[result.count].x = state.currentX;
 			result.events[result.count].y = state.currentY;
+
+			if (state.gesture == Drag) {
+				DragData dragData{
+					.deltaX = state.currentX - state.lastConsumedX,
+					.deltaY = state.currentY - state.lastConsumedY,
+				};
+				result.events[result.count].data = dragData;
+				state.lastConsumedX = state.currentX;
+				state.lastConsumedY = state.currentY;
+			}
+			else {
+				result.events[result.count].data = std::monostate{};
+			}
+
 			result.count++;
 
 			// Drag only ends when the touch ends
