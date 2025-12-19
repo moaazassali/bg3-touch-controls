@@ -94,6 +94,8 @@ private:
 	}
 
 	void updateTouchInputState(TouchInputState& state, const TouchInputEvent& input) {
+		// Would be helpful to have some formal state machine diagrams for this logic
+		// to ensure all edge cases are covered.
 		if (state.phase == End) {
 			// Already ended, ignore further updates
 			return;
@@ -167,6 +169,8 @@ public:
 			else {
 				// MAX_STATES reached, ignore the new touch input
 				// Should realistically never happen with a reasonably small time frame or large MAX_STATES
+				// Could maybe think about resetting the state array to avoid a situation where no input is
+				// being registered at all because all states are occupied by ended touches.
 				std::cout << "No free state available for new touch input ID: " << input.id << std::endl;
 			}
 		}
