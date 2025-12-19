@@ -56,8 +56,21 @@ private:
 		int currentX = -1;
 		int currentY = -1;
 		std::chrono::steady_clock::time_point startTime;
+		// We need to remember if we ever exceeded the tap slop
+		// Like if we quickly swipe far and then back to starting position
+		bool exceededTapSlop = false;
 	};
 	TouchInputState touchInputStates[MAX_STATES];
+
+	// Should be set according to the actual device DPI at launch
+	const static int DPI = 353;
+
+	// px = dp * (dpi / 160)
+	// Some inspiration from Android's ViewConfiguration
+	// https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/view/ViewConfiguration.java
+	constexpr static int TAP_SLOP = 8; // Although Android uses 8dp, it might need an increase for a game context.
+	constexpr static int TAP_SLOP_PX = TAP_SLOP * DPI / 160;
+
 
 	TouchInputState* findStateById(uint32_t id) {
 		for (int i = 0; i < MAX_STATES; ++i) {
@@ -95,11 +108,22 @@ private:
 			return;
 		}
 
+		// === Tap ===
+		if (abs(state.currentX - state.startX) > TAP_SLOP_PX ||
+			abs(state.currentY - state.startY) > TAP_SLOP_PX) {
+			state.exceededTapSlop = true;
+		}
+		if (!state.exceededTapSlop && state.phase == End) {
+			state.gesture = Tap;
+		}
+
 		// === Drag ===
 		// Everything is technically a drag including taps and holds since a touch will move
-		// even if a little bit. So we set drag as the default gesture here.
-		// Later implementations for tap and hold will restrict when a Drag is recognized.
-		state.gesture = Drag;
+		// even if a little bit. So we set Drag as the default gesture after accounting for
+		// all other gestures.
+		if (state.exceededTapSlop) {
+			state.gesture = Drag;
+		}
 	}
 
 public:
@@ -121,6 +145,7 @@ public:
 				freeState->startTime = input.timestamp;
 				freeState->gesture = None;
 				freeState->active = true;
+				freeState->exceededTapSlop = false;
 			}
 			else {
 				// MAX_STATES reached, ignore the new touch input
@@ -143,7 +168,7 @@ public:
 			if (!state.active || state.gesture == None) {
 				continue;
 			}
-
+			
 			result.events[result.count].type = state.gesture;
 			result.count++;
 
