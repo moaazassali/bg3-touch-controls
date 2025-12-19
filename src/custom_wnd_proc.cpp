@@ -7,7 +7,7 @@
 
 #include "reverse/action_sequences/action_sequences.h"
 #include "sdl_bindings/sdl_bindings.h"
-#include "touch_handler.cpp"
+#include "touch_handler.h"
 
 
 extern WNDPROC g_originalWndProc;
