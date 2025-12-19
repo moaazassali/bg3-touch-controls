@@ -59,6 +59,8 @@ private:
 		// We need to remember if we ever exceeded the tap slop
 		// Like if we quickly swipe far and then back to starting position
 		bool exceededTapSlop = false;
+		bool reachedHoldThreshold = false;
+		bool sentInitialHoldEvent = false;
 	};
 	TouchInputState touchInputStates[MAX_STATES];
 
@@ -70,6 +72,7 @@ private:
 	// https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/view/ViewConfiguration.java
 	constexpr static int TAP_SLOP = 8; // Although Android uses 8dp, it might need an increase for a game context.
 	constexpr static int TAP_SLOP_PX = TAP_SLOP * DPI / 160;
+	constexpr static std::chrono::milliseconds HOLD_THRESHOLD = std::chrono::milliseconds(400);
 
 
 	TouchInputState* findStateById(uint32_t id) {
@@ -113,15 +116,27 @@ private:
 			abs(state.currentY - state.startY) > TAP_SLOP_PX) {
 			state.exceededTapSlop = true;
 		}
-		if (!state.exceededTapSlop && state.phase == End) {
+
+		if (!state.exceededTapSlop &&
+			(input.timestamp - state.startTime) < HOLD_THRESHOLD &&
+			state.phase == End) {
 			state.gesture = Tap;
+		}
+
+		// === Hold ===
+		if (!state.exceededTapSlop &&
+			(input.timestamp - state.startTime) >= HOLD_THRESHOLD) {
+			state.gesture = Hold;
+			state.reachedHoldThreshold = true;
 		}
 
 		// === Drag ===
 		// Everything is technically a drag including taps and holds since a touch will move
 		// even if a little bit. So we set Drag as the default gesture after accounting for
 		// all other gestures.
-		if (state.exceededTapSlop) {
+		// With the introduction of hold, we have a new possibility: a hold can transition into a drag
+		// For now, we will consider that to remain a hold until the touch ends.
+		if (state.exceededTapSlop && !state.reachedHoldThreshold) {
 			state.gesture = Drag;
 		}
 	}
@@ -146,6 +161,8 @@ public:
 				freeState->gesture = None;
 				freeState->active = true;
 				freeState->exceededTapSlop = false;
+				freeState->reachedHoldThreshold = false;
+				freeState->sentInitialHoldEvent = false;
 			}
 			else {
 				// MAX_STATES reached, ignore the new touch input
@@ -168,7 +185,28 @@ public:
 			if (!state.active || state.gesture == None) {
 				continue;
 			}
-			
+
+			// Hold ends when the touch ends but there are only two interesting cases:
+			// 1- When the hold is recognized after the HOLD_THRESHOLD
+			// 2- When the hold is released after being recognized
+			// If the time frame of checking gestures is larger than HOLD_THRESHOLD,
+			// then it is possible to miss the exact moment the hold is recognized and
+			// only the 2nd case gets reported.
+			// This means that we can technically report a higher number of gesture events
+			// than MAX_STATES since one touch state can generate more than one gesture events
+			// However, given our much smaller time frame compared to HOLD_THRESHOLD, this should
+			// never happen in practice.
+			// So, the hold remains in an active state and we have to ignore it until the touch ends
+			// except for case 1.
+			if (state.phase != End && state.gesture == Hold) {
+				if (state.sentInitialHoldEvent) {
+					continue;
+				}
+				else {
+					state.sentInitialHoldEvent = true;
+				}
+			}
+
 			result.events[result.count].type = state.gesture;
 			result.count++;
 
