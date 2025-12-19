@@ -145,7 +145,7 @@ TouchHandler::GestureEventsResult TouchHandler::getGestureEvents() {
 			// This can be useful if the consumer needs to run some initialization logic.
 			if (state.lastConsumedX == state.startX &&
 				state.lastConsumedY == state.startY &&
-				state.phase == Move) {
+				state.phase == Update) {
 				result.events[result.count].phase = Start;
 			}
 			result.events[result.count].data = dragData;

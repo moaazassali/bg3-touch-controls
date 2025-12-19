@@ -119,7 +119,7 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 				.id = pointerId,
 				.x = pointerInfo.ptPixelLocation.x,
 				.y = pointerInfo.ptPixelLocation.y,
-				.phase = Move,
+				.phase = Update,
 				.timestamp = std::chrono::steady_clock::now()
 				});
 		}

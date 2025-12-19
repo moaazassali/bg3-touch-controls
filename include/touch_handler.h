@@ -8,7 +8,7 @@
 
 enum TouchPhase {
 	Start,
-	Move,
+	Update,
 	End,
 };
 
