@@ -39,7 +39,14 @@ static void processTap(const GestureEvent& event, POINT clientPt) {
 
 
 static void processHold(const GestureEvent& event, POINT clientPt) {
-
+	// A hold gesture triggers two events: one when the hold is recognized (after a delay)
+	// and another when the finger is lifted.
+	// We don't want to send another click when the finger is lifted.
+	if (event.phase == Update) {
+		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+		auto task = []() {sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);};
+		scheduleTask(task, std::chrono::milliseconds(10));
+	}
 }
 
 
