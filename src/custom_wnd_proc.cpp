@@ -15,6 +15,8 @@ extern HINTERACTIONCONTEXT g_hInteractionContext;
 extern bool g_hasManipulationUpdateFired;
 extern INTERACTION_ID g_lastInteractionId;
 
+void processTouchInput();
+
 
 // Refactor: Extract common logic with interaction_context.cpp
 static void handleCameraRotation(float deltaX, INTERACTION_FLAGS interactionFlags) {
@@ -75,10 +77,7 @@ static void processBufferedPacketsIfReady() {
 		}
 		lastTime = now;
 
-		auto gestures = TouchHandler::getSingleton().getGestureEvents();
-		for (int i = 0; i < gestures.count; ++i) {
-			std::cout << "Detected gesture: " << gestures.events[i].type << std::endl;
-		}
+		processTouchInput();
 	}
 }
 
@@ -177,10 +176,7 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 			// 
 			// Maybe we should have a function that keeps running on its own thread to process buffered packets at a fixed rate
 			// instead of relying on input events to trigger the processing?
-			auto gestures = TouchHandler::getSingleton().getGestureEvents();
-			for (int i = 0; i < gestures.count; ++i) {
-				std::cout << "Detected gesture: " << gestures.events[i].type << std::endl;
-			}
+			processTouchInput();
 		}
 		processBufferedPacketsIfReady();
 		return 0;
