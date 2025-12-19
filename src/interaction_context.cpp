@@ -17,15 +17,6 @@
 extern HINTERACTIONCONTEXT g_hInteractionContext;
 PendingCameraUpdates g_pendingCameraUpdates;
 
-// These two global variables are needed to detect the case where a manipulation
-// is still ongoing but the contact isn't moving anymore.
-// This happens when the user is holding their finger still on the screen during a manipulation.
-// The interaction context won't fire any ManipulationUpdate events in this case, and we sometimes
-// need to handle this case to send zero deltas to stop any ongoing movements like stopping the
-// camera rotation.
-bool g_hasManipulationUpdateFired = false;
-INTERACTION_ID g_lastInteractionId = INTERACTION_ID_NONE;
-
 
 // https://learn.microsoft.com/en-us/windows/win32/api/interactioncontext/ne-interactioncontext-interaction_id
 // https://learn.microsoft.com/en-us/windows/win32/api/interactioncontext/ne-interactioncontext-interaction_configuration_flags
@@ -144,45 +135,9 @@ static void handleUIScroll(int x, int y, float deltaY) {
 }
 
 
-static void handleCameraRotation(float deltaX, INTERACTION_FLAGS interactionFlags) {
-	constexpr float rotationScaleFactor = 0.5f;
-	auto isSwipingRight = deltaX >= 0;
-	auto strength = std::abs(deltaX * rotationScaleFactor);
-
-	if (interactionFlags & INTERACTION_FLAG_BEGIN) {
-		auto seq3 = reverse::getWorldSwipeToggleSequence(true);
-		reverse::populateActionPointers(seq3);
-		reverse::pushSequenceToBuffer(seq3, 0);
-	}
-	else if (interactionFlags & INTERACTION_FLAG_END || interactionFlags & INTERACTION_FLAG_CANCEL) {
-		auto seq1 = reverse::getWorldSwipeToggleSequence(false);
-		reverse::populateActionPointers(seq1);
-		reverse::pushSequenceToBuffer(seq1, 0);
-		// Send zero-strength releases to stop any ongoing swipe actions
-		// Doesn't hurt to be safe here.
-		auto seq2 = reverse::getWorldSwipeRightSequence(0.0f, 0.0f, false);
-		reverse::populateActionPointers(seq2);
-		reverse::pushSequenceToBuffer(seq2, 0);
-		auto seq3 = reverse::getWorldSwipeLeftSequence(0.0f, 0.0f, false);
-		reverse::populateActionPointers(seq3);
-		reverse::pushSequenceToBuffer(seq3, 0);
-	}
-	else {
-		auto seq = isSwipingRight ?
-			reverse::getWorldSwipeRightSequence(strength, deltaX, false) :
-			reverse::getWorldSwipeLeftSequence(strength, deltaX, false);
-		reverse::populateActionPointers(seq);
-		reverse::pushSequenceToBuffer(seq, 0);
-	}
-
-	// Similar to the scroll case, we need to send a hardware event to ensure the game processes the action requests queue.
-	sdl_bindings::sendDummyF24KeyUp();
-}
-
 static bool manipulationStartedOverUI = false;
 
 static void CALLBACK interactionContextCallback(void* clientData, const INTERACTION_CONTEXT_OUTPUT2* output) {
-	g_lastInteractionId = output->interactionId;
 	HWND hwnd = reinterpret_cast<HWND>(clientData);
 
 	POINT clientPt = { static_cast<LONG>(output->x), static_cast<LONG>(output->y) };
@@ -204,7 +159,6 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 		// Think about the memory ordering and atomicity here later
 		// Does only atomicity matter? Is the performance benefit worth it?
 		if (output->contactCount == 1) {
-			g_hasManipulationUpdateFired = true;
 			// Similar to the tap case, we need a small delay for the g_isCursorOverUI boolean to be updated correctly
 			// based on the new cursor position.
 			// We also only need to move the cursor at the beginning to determine if we're over UI or not.
@@ -254,7 +208,6 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 				}
 
 				if (!manipulationStartedOverUI) {
-					handleCameraRotation(translationX, interactionFlags);
 					handlePitchUpdate(translationY, interactionFlags);
 				}
 

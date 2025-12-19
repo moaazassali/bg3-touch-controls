@@ -5,6 +5,7 @@
 #include "sdl_bindings/sdl_bindings.h"
 #include "game_bindings.h"
 #include "joystick/joystick.h"
+#include "reverse/action_sequences/action_sequences.h"
 
 
 extern HWND g_gameHwnd;
@@ -52,7 +53,47 @@ static void processHold(const GestureEvent& event, POINT clientPt) {
 }
 
 
+static void handleCameraRotation(int deltaX, TouchPhase phase) {
+	constexpr float rotationScaleFactor = 0.5f;
+	auto isSwipingRight = deltaX >= 0;
+	auto strength = std::abs(deltaX * rotationScaleFactor);
+
+	if (phase == Start) {
+		auto seq3 = reverse::getWorldSwipeToggleSequence(true);
+		reverse::populateActionPointers(seq3);
+		reverse::pushSequenceToBuffer(seq3, 0);
+	}
+	else if (phase == End) {
+		auto seq1 = reverse::getWorldSwipeToggleSequence(false);
+		reverse::populateActionPointers(seq1);
+		reverse::pushSequenceToBuffer(seq1, 0);
+		// Send zero-strength releases to stop any ongoing swipe actions in case last
+		// gesture event had a non-zero deltaX.
+		auto seq2 = reverse::getWorldSwipeRightSequence(0.0f, 0.0f, false);
+		reverse::populateActionPointers(seq2);
+		reverse::pushSequenceToBuffer(seq2, 0);
+		auto seq3 = reverse::getWorldSwipeLeftSequence(0.0f, 0.0f, false);
+		reverse::populateActionPointers(seq3);
+		reverse::pushSequenceToBuffer(seq3, 0);
+	}
+	else {
+		auto seq = isSwipingRight ?
+			reverse::getWorldSwipeRightSequence(strength, deltaX, false) :
+			reverse::getWorldSwipeLeftSequence(strength, deltaX, false);
+		reverse::populateActionPointers(seq);
+		reverse::pushSequenceToBuffer(seq, 0);
+	}
+
+	// Send a hardware event to ensure the game processes the action requests queue.
+	// This happens in processInput; we need it to ensure it doesn't return early.
+	sdl_bindings::sendDummyF24KeyUp();
+}
+
+
 static bool dragStartedOverUI = false;
+// We need to know which drag event is for joystick/camera
+static uint32_t joystickTouchInputId = 0;
+static uint32_t cameraTouchInputId = 0;
 
 static void processDrag(const GestureEvent& event, POINT clientPt) {
 	// We need to differentiate between drags done over UI or over the game world.
@@ -85,17 +126,32 @@ static void processDrag(const GestureEvent& event, POINT clientPt) {
 				if (clientPt.x < windowSize.cx / 2) {
 					auto& dragData = std::get<DragData>(event.data);
 					activateJoystick((float)(clientPt.x - dragData.deltaX), (float)(clientPt.y - dragData.deltaY));
+					joystickTouchInputId = event.touchInputId;
+				}
+				else {
+					cameraTouchInputId = event.touchInputId;
 				}
 			}
 		}
 
-		if (!dragStartedOverUI && g_joystickState.isActive) {
+		if (!dragStartedOverUI) {
 			auto& dragData = std::get<DragData>(event.data);
-			moveJoystick(dragData.deltaX, dragData.deltaY);
+			if (g_joystickState.isActive && event.touchInputId == joystickTouchInputId) {
+				moveJoystick(dragData.deltaX, dragData.deltaY);
+			}
+			if (event.touchInputId == cameraTouchInputId) {
+				handleCameraRotation(dragData.deltaX, event.phase);
+			}
 		}
 
 		if (event.phase == End) {
-			releaseJoystick();
+			if (event.touchInputId == joystickTouchInputId) {
+				releaseJoystick();
+				joystickTouchInputId = 0;
+			}
+			if (event.touchInputId == cameraTouchInputId) {
+				cameraTouchInputId = 0;
+			}
 			dragStartedOverUI = false;
 		}
 		};
