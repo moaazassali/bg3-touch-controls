@@ -195,6 +195,14 @@ public:
 	}
 
 	struct GestureEventsResult {
+		// If the time frame of checking gestures is larger than HOLD_THRESHOLD,
+		// then it is possible to miss the exact moment the hold is recognized and
+		// only the 2nd case gets reported.
+		// This means that we can technically report a higher number of gesture events
+		// than MAX_STATES since one touch state can generate more than one gesture events
+		// This can also apply for drags if a drag starts and ends within the time frame, so we
+		// miss the start event and only report the end event.
+		// Ultimately, given our very small time frame, this should never happen in practice.
 		GestureEvent events[MAX_STATES];
 		int count;
 	};
@@ -211,15 +219,8 @@ public:
 			// Hold ends when the touch ends but there are only two interesting cases:
 			// 1- When the hold is recognized after the HOLD_THRESHOLD
 			// 2- When the hold is released after being recognized
-			// If the time frame of checking gestures is larger than HOLD_THRESHOLD,
-			// then it is possible to miss the exact moment the hold is recognized and
-			// only the 2nd case gets reported.
-			// This means that we can technically report a higher number of gesture events
-			// than MAX_STATES since one touch state can generate more than one gesture events
-			// However, given our much smaller time frame compared to HOLD_THRESHOLD, this should
-			// never happen in practice.
-			// So, the hold remains in an active state and we have to ignore it until the touch ends
-			// except for case 1.
+			// So, the hold remains in an active state and we have to ignore it until the
+			// touch ends except for case 1.
 			if (state.phase != End && state.gesture == Hold) {
 				if (state.sentInitialHoldEvent) {
 					continue;
@@ -240,9 +241,17 @@ public:
 					.deltaX = state.currentX - state.lastConsumedX,
 					.deltaY = state.currentY - state.lastConsumedY,
 				};
+				// The first drag event should have a Start phase instead.
+				// This can be useful if the consumer needs to run some initialization logic.
+				if (state.lastConsumedX == state.startX &&
+					state.lastConsumedY == state.startY &&
+					state.phase == Move) {
+					result.events[result.count].phase = Start;
+				}
 				result.events[result.count].data = dragData;
 				state.lastConsumedX = state.currentX;
 				state.lastConsumedY = state.currentY;
+
 			}
 			else {
 				result.events[result.count].data = std::monostate{};
@@ -250,8 +259,7 @@ public:
 
 			result.count++;
 
-			// Drag only ends when the touch ends
-			// We need to keep reporting drag updates until then
+			// All gestures end when the touch is released
 			if (state.phase == End) {
 				state.active = false;
 			}
