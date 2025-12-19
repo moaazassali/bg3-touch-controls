@@ -42,7 +42,7 @@ add_library (BG3TouchControls SHARED
 	"src/reverse/action_sequences/world_swipe_toggle_sequence.cpp"
 	"src/joystick/dx11_present_hook.cpp"
 	"src/joystick/draw_joystick.cpp"
-	"src/touch_handler.cpp"
+	#"src/touch_handler.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")

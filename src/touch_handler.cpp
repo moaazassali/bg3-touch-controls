@@ -26,16 +26,8 @@ enum GestureType {
 };
 
 
-struct TouchInputState {
-	uint32_t touchId;
-	TouchPhase phase;
-	GestureType gesture;
-	bool active;
-	int startX;
-	int startY;
-	int currentX;
-	int currentY;
-	std::chrono::steady_clock::time_point startTime;
+struct GestureEvent {
+	GestureType type;
 };
 
 
@@ -54,6 +46,17 @@ private:
 	// For an infinitely small time frame, MAX_STATES is unbounded if all touch
 	// information must be preserved for any MAX_SIMULTANEOUS_TOUCHES > 0.
 	constexpr static int MAX_STATES = 3;
+	struct TouchInputState {
+		uint32_t touchId = 0;
+		TouchPhase phase = Start;
+		GestureType gesture = None;
+		bool active = false;
+		int startX = -1;
+		int startY = -1;
+		int currentX = -1;
+		int currentY = -1;
+		std::chrono::steady_clock::time_point startTime;
+	};
 	TouchInputState touchInputStates[MAX_STATES];
 
 	TouchInputState* findStateById(uint32_t id) {
@@ -75,18 +78,28 @@ private:
 	}
 
 	void updateTouchInputState(TouchInputState& state, const TouchInputEvent& input) {
-		if (input.phase == Start) {
-			state.startX = input.x;
-			state.startY = input.y;
-			state.startTime = input.timestamp;
-			state.gesture = None;
+		if (state.phase == End) {
+			// Already ended, ignore further updates
+			return;
 		}
 
 		state.phase = input.phase;
 		state.currentX = input.x;
 		state.currentY = input.y;
 
-		// TODO: Implement gesture recognition logic here
+		if (input.phase == Start) {
+			state.startX = input.x;
+			state.startY = input.y;
+			state.startTime = input.timestamp;
+			state.gesture = None;
+			return;
+		}
+
+		// === Drag ===
+		// Everything is technically a drag including taps and holds since a touch will move
+		// even if a little bit. So we set drag as the default gesture here.
+		// Later implementations for tap and hold will restrict when a Drag is recognized.
+		state.gesture = Drag;
 	}
 
 public:
@@ -111,7 +124,35 @@ public:
 			}
 			else {
 				// MAX_STATES reached, ignore the new touch input
+				// Should realistically never happen with a reasonably small time frame or large MAX_STATES
+				std::cout << "No free state available for new touch input ID: " << input.id << std::endl;
 			}
 		}
+	}
+
+	struct GestureEventsResult {
+		GestureEvent events[MAX_STATES];
+		int count;
+	};
+
+	GestureEventsResult getGestureEvents() {
+		GestureEventsResult result{};
+		result.count = 0;
+		for (int i = 0; i < MAX_STATES; ++i) {
+			TouchInputState& state = touchInputStates[i];
+			if (!state.active || state.gesture == None) {
+				continue;
+			}
+
+			result.events[result.count].type = state.gesture;
+			result.count++;
+
+			// Drag only ends when the touch ends
+			// We need to keep reporting drag updates until then
+			if (state.phase == End) {
+				state.active = false;
+			}
+		}
+		return result;
 	}
 };

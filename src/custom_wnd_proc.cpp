@@ -7,12 +7,14 @@
 
 #include "reverse/action_sequences/action_sequences.h"
 #include "sdl_bindings/sdl_bindings.h"
+#include "touch_handler.cpp"
 
 
 extern WNDPROC g_originalWndProc;
 extern HINTERACTIONCONTEXT g_hInteractionContext;
 extern bool g_hasManipulationUpdateFired;
 extern INTERACTION_ID g_lastInteractionId;
+TouchHandler g_touchHandler;
 
 
 // Refactor: Extract common logic with interaction_context.cpp
@@ -73,6 +75,11 @@ static void processBufferedPacketsIfReady() {
 			handleCameraRotation(0.0f, INTERACTION_FLAG_NONE);
 		}
 		lastTime = now;
+
+		auto gestures = g_touchHandler.getGestureEvents();
+		for (int i = 0; i < gestures.count; ++i) {
+			std::cout << "Detected gesture: " << gestures.events[i].type << std::endl;
+		}
 	}
 }
 
@@ -89,6 +96,14 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 			if FAILED(BufferPointerPacketsInteractionContext(g_hInteractionContext, 1, &pointerInfo)) {
 				std::cout << "Failed to buffer pointer packet in WM_POINTERDOWN." << std::endl;
 			}
+
+			g_touchHandler.addTouchInputEvent(TouchInputEvent{
+				.id = pointerId,
+				.x = pointerInfo.ptPixelLocation.x,
+				.y = pointerInfo.ptPixelLocation.y,
+				.phase = Start,
+				.timestamp = std::chrono::steady_clock::now()
+				});
 		}
 		processBufferedPacketsIfReady();
 		return 0;
@@ -100,6 +115,14 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 			if FAILED(BufferPointerPacketsInteractionContext(g_hInteractionContext, 1, &pointerInfo)) {
 				std::cout << "Failed to buffer pointer packet in WM_POINTERUPDATE." << std::endl;
 			}
+
+			g_touchHandler.addTouchInputEvent(TouchInputEvent{
+				.id = pointerId,
+				.x = pointerInfo.ptPixelLocation.x,
+				.y = pointerInfo.ptPixelLocation.y,
+				.phase = Move,
+				.timestamp = std::chrono::steady_clock::now()
+				});
 		}
 		processBufferedPacketsIfReady();
 		return 0;
@@ -137,6 +160,27 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 			ProcessBufferedPacketsInteractionContext(g_hInteractionContext);
 			if FAILED(RemovePointerInteractionContext(g_hInteractionContext, pointerId)) {
 				std::cout << "Failed to remove pointer in WM_POINTERUP." << std::endl;
+			}
+
+			g_touchHandler.addTouchInputEvent(TouchInputEvent{
+				.id = pointerId,
+				.x = pointerInfo.ptPixelLocation.x,
+				.y = pointerInfo.ptPixelLocation.y,
+				.phase = End,
+				.timestamp = std::chrono::steady_clock::now()
+				});
+			// We must process the buffered packets here to ensure the end phase is registered
+			// Otherwise, if we wait until the next getGestureEvents call in processBufferedPacketsIfReady,
+			// it might not be ready yet depending on whether the next polling interval has been reached.
+			// So, the next call to the processIfReady call can only happen after another input event
+			// which might never happen or happen too late since we are at the end of a touch.
+			// So we might suddenly get some gesture registered long after the touch has ended or not at all.
+			// 
+			// Maybe we should have a function that keeps running on its own thread to process buffered packets at a fixed rate
+			// instead of relying on input events to trigger the processing?
+			auto gestures = g_touchHandler.getGestureEvents();
+			for (int i = 0; i < gestures.count; ++i) {
+				std::cout << "Detected gesture: " << gestures.events[i].type << std::endl;
 			}
 		}
 		processBufferedPacketsIfReady();
