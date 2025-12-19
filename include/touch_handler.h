@@ -38,6 +38,7 @@ struct DragData {
 
 
 struct GestureEvent {
+	// Helpful for differentiating two ongoing gestures of the same type like two drags
 	uint32_t touchInputId;
 	GestureType type;
 	TouchPhase phase;
