@@ -27,7 +27,11 @@ enum GestureType {
 
 
 struct GestureEvent {
+	uint32_t touchInputId;
 	GestureType type;
+	TouchPhase phase;
+	int x;
+	int y;
 };
 
 
@@ -211,7 +215,11 @@ public:
 				}
 			}
 
+			result.events[result.count].touchInputId = state.touchId;
 			result.events[result.count].type = state.gesture;
+			result.events[result.count].phase = state.phase;
+			result.events[result.count].x = state.currentX;
+			result.events[result.count].y = state.currentY;
 			result.count++;
 
 			// Drag only ends when the touch ends
