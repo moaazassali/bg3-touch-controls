@@ -12,7 +12,6 @@
 #include "reverse/input_manager.h"
 #include "reverse/action_sequences/action_sequences.h"
 #include "utils.h"
-#include "joystick/joystick.h"
 
 
 extern HINTERACTIONCONTEXT g_hInteractionContext;
@@ -251,27 +250,18 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 						// Move cursor offscreen to avoid hover effects at wherever the cursor ends up
 						// being due to the initial moveCursor call at the beginning of the manipulation.
 						sdl_bindings::moveCursor(-10000, -10000);
-						activateJoystick((float)clientPt.x, (float)clientPt.y);
 					}
 				}
 
 				if (!manipulationStartedOverUI) {
-					if (g_joystickState.isActive) {
-						moveJoystick(translationX, translationY);
-					}
-					else {
-						handleCameraRotation(translationX, interactionFlags);
-						handlePitchUpdate(translationY, interactionFlags);
-					}
+					handleCameraRotation(translationX, interactionFlags);
+					handlePitchUpdate(translationY, interactionFlags);
 				}
 
 				if (interactionFlags & INTERACTION_FLAG_END && manipulationStartedOverUI) {
 					sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
 					// Needed to prevent moveCursor on next manipulation start
 					manipulationStartedOverUI = false;
-				}
-				if (interactionFlags & INTERACTION_FLAG_END) {
-					releaseJoystick();
 				}
 				};
 			// I tested 1 to 5ms and they all caused some issues where g_isCursorOverUI was true when it shouldn't be,

@@ -3,6 +3,8 @@
 #include "utils.h"
 #include "touch_handler.h"
 #include "sdl_bindings/sdl_bindings.h"
+#include "game_bindings.h"
+#include "joystick/joystick.h"
 
 
 extern HWND g_gameHwnd;
@@ -50,8 +52,50 @@ static void processHold(const GestureEvent& event, POINT clientPt) {
 }
 
 
-static void processDrag(const GestureEvent& event, POINT clientPt) {
+static bool dragStartedOverUI = false;
 
+static void processDrag(const GestureEvent& event, POINT clientPt) {
+	// We need to differentiate between drags done over UI or over the game world.
+	// We can use a game global struct that tracks whether the cursor is over UI or not.
+	// Similar to the move cursor -> click delay needed, we need to move the cursor first
+	// and then wait a bit for the boolean we're interested in to be updated.
+	// We need to move the cursor at the beginning just to determine if we *started* over UI.
+	// Cursor movement is otherwise not needed for non-UI interactions and actually causes
+	// unwanted behavior like item/npc hover effects.
+	if (event.phase == Start) {
+		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+		dragStartedOverUI = false;
+	}
+	if (dragStartedOverUI) {
+		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+	}
+
+	auto task = [event, clientPt]() {
+		// Now that we have waited a bit, we can check if we started over UI.
+		if (event.phase == Start) {
+			if (*reverse::g_isCursorOverUI) {
+				dragStartedOverUI = true;
+			}
+			else {
+				// Move cursor offscreen to avoid hover effects due to our moveCursor call above.
+				sdl_bindings::moveCursor(-10000, -10000);
+				auto& dragData = std::get<DragData>(event.data);
+				activateJoystick((float)(clientPt.x - dragData.deltaX), (float)(clientPt.y - dragData.deltaY));
+			}
+		}
+
+		if (!dragStartedOverUI && g_joystickState.isActive) {
+			auto& dragData = std::get<DragData>(event.data);
+			moveJoystick(dragData.deltaX, dragData.deltaY);
+		}
+
+		if (event.phase == End) {
+			releaseJoystick();
+			dragStartedOverUI = false;
+		}
+		};
+
+	scheduleTask(task, std::chrono::milliseconds(10));
 }
 
 
@@ -78,7 +122,7 @@ void processTouchInput() {
 
 	for (int i = 0; i < events.count; ++i) {
 		const auto& event = events.events[i];
-		std::cout << "Detected gesture: " << event.type << std::endl;
+		//std::cout << "Detected gesture: " << event.type << std::endl;
 		POINT clientPt = { static_cast<LONG>(event.x), static_cast<LONG>(event.y) };
 		ScreenToClient(g_gameHwnd, &clientPt);
 		processSingleGestureEvent(event, clientPt);
