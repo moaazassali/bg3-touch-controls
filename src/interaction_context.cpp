@@ -43,65 +43,6 @@ static const INTERACTION_CONTEXT_CONFIGURATION config[] = {
 };
 
 
-const auto prevDeltasCount = 7;
-const auto numberOfDeltasForInertiaInitialDelta = 3;
-float prevPitchDeltas[prevDeltasCount] = { 0.0f };
-
-static void handlePitchUpdate(float rawDelta, INTERACTION_FLAGS interactionFlags) {
-	constexpr float pitchFactor = 0.25f;
-	auto pitchDelta = rawDelta * pitchFactor;
-	pitchDelta = std::clamp(pitchDelta, -15.0f, 15.0f);
-
-	if (interactionFlags & INTERACTION_FLAG_BEGIN) {
-		g_pendingCameraUpdates.pitchDelta.store(0);
-		g_pendingCameraUpdates.pitchInertiaState.store(InertiaState::NotInInertia);
-		for (auto& delta : prevPitchDeltas) {
-			delta = 0.0f;
-		}
-		g_pendingCameraUpdates.pitchDelta.store(pitchDelta);
-	}
-	else if (interactionFlags & INTERACTION_FLAG_END) {
-		// calcualte sum of last 3 deltas and also last 10 deltas
-		float sumLastThree = 0.0f;
-		for (int i = 0; i < numberOfDeltasForInertiaInitialDelta && i < prevDeltasCount; ++i) {
-			sumLastThree += prevPitchDeltas[i];
-		}
-		float sumAll = 0.0f;
-		for (int i = 0; i < prevDeltasCount; ++i) {
-			sumAll += prevPitchDeltas[i];
-		}
-
-		// For initial pitch delta for inertia, a smaller amount of recent measurements are a more accurate
-		// indicator of the final delta of the swipe motion.
-		constexpr float inertiaInitialDeltaFactor = 0.25f;
-		const float deltasAverageForInertiaInitialDelta = sumLastThree / static_cast<float>(numberOfDeltasForInertiaInitialDelta);
-		const float inertiaInitialDelta = deltasAverageForInertiaInitialDelta * inertiaInitialDeltaFactor;
-		// Preventing the activation of inertia is a much more deliberate action from the user than activating it.
-		// So taking into account a longer history of deltas can give us a better idea of whether the user is "stopping"
-		// the swipe motion or is making a short swipe.
-		const float pitchDeltaAverageAll = sumAll / static_cast<float>(prevDeltasCount);
-		constexpr float inertiaActivationThreshold = 8.0f * pitchFactor;
-
-		const auto isShortSwipe = std::abs(deltasAverageForInertiaInitialDelta) > std::abs(pitchDeltaAverageAll);
-		const auto isLongSwipeWithNoStop = std::abs(pitchDeltaAverageAll) > inertiaActivationThreshold;
-		const auto shouldActivateInertia = isShortSwipe || isLongSwipeWithNoStop;
-		if (shouldActivateInertia)
-		{
-			g_pendingCameraUpdates.pitchDelta.store(inertiaInitialDelta);
-			g_pendingCameraUpdates.pitchInertiaState.store(InertiaState::InertiaStart);
-		}
-	}
-	else {
-		g_pendingCameraUpdates.pitchDelta.fetch_add(pitchDelta);
-	}
-
-	for (int i = prevDeltasCount - 1; i > 0; --i) {
-		prevPitchDeltas[i] = prevPitchDeltas[i - 1];
-	}
-	prevPitchDeltas[0] = pitchDelta;
-}
-
-
 static void handleUIScroll(int x, int y, float deltaY) {
 	// invert for natural fell. make configurable.
 	constexpr float scrollFactor = 0.1f;
@@ -205,10 +146,6 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 						// being due to the initial moveCursor call at the beginning of the manipulation.
 						sdl_bindings::moveCursor(-10000, -10000);
 					}
-				}
-
-				if (!manipulationStartedOverUI) {
-					handlePitchUpdate(translationY, interactionFlags);
 				}
 
 				if (interactionFlags & INTERACTION_FLAG_END && manipulationStartedOverUI) {
