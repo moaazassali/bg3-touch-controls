@@ -25,6 +25,11 @@ namespace reverse {
 	using updateCameraPitch_t = void(*)(uint64_t a1, uint64_t a2, reverse::CameraObject* a3, reverse::DeltaTimeObject* a4);
 	constexpr const char* pattern_updateCameraPitch = "E8 ?? ?? ?? ?? 48 8B 46 70 4C 8D 45 90 0F 28 46 30";
 
+	// Unknown return type and parameters
+	// Called repeatedly (not sure about interval) when using controller to check if character should be moved
+	using moveCharacter_t = void* (*)(void* a1, void* a2, void* a3);
+	constexpr const char* pattern_moveCharacter = "E8 ?? ?? ?? ?? F3 0F 10 55 ?? F3 0F 10 45 ?? F3 0F 10 4D ?? F3 0F 10 35";
+
 
 	// This is called every frame to handle input
 	// a1 is a pretty big "InputManager" struct, which holds a lot of states, queues, etc...

@@ -44,6 +44,7 @@ add_library (BG3TouchControls SHARED
 	"src/joystick/draw_joystick.cpp"
 	"src/touch_handler.cpp"
 	"src/gesture_events_processor.cpp"
+	"src/Hooks/move_character_hook.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")

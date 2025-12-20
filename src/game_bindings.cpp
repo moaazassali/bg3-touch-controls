@@ -145,6 +145,7 @@ static void installHooks(uintptr_t start, uintptr_t end)
 	//success &= installPushToActionRequestsQueueHook(start, end);
 	//success &= installFilterPreFinalActionsQueueHook(start, end);
 	success &= installDX11PresentHook();
+	success &= installMoveCharacterHook(start, end);
 
 	if (success) {
 		std::cout << "All hooks installed successfully." << std::endl;

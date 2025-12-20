@@ -20,6 +20,7 @@ bool installProcessInputHook(uintptr_t start, uintptr_t end);
 bool installUnkConsumesFilteredActionsQueueHook(uintptr_t start, uintptr_t end);
 bool installPushToActionRequestsQueueHook(uintptr_t start, uintptr_t end);
 bool installFilterPreFinalActionsQueueHook(uintptr_t start, uintptr_t end);
+bool installMoveCharacterHook(uintptr_t start, uintptr_t end);
 
 bool installMinimumHotbarRowsPatch(uintptr_t start, uintptr_t end);
 
