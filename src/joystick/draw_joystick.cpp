@@ -89,6 +89,9 @@ void releaseJoystick()
 // This way, the user can still switch directions without having to go all the way back to center first.
 void moveJoystick(float translationX, float translationY)
 {
+	// Invert translationY because screen Y+ is down but joystick Y+ is up
+	translationY = -translationY;
+
 	auto& io = ImGui::GetIO();
 	float radius = calculateJoystickRadius(io.DisplaySize.x, io.DisplaySize.y);
 	float radiusPx = radius * min(io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
@@ -110,7 +113,8 @@ void moveJoystick(float translationX, float translationY)
 	auto extraYInPx = translationY - (newStrengthYInPx - oldStrengthYInPx);
 
 	g_joystickState.posX += extraXInPx;
-	g_joystickState.posY += extraYInPx;
+	// To move joystick up on screen, we have to decrease its Y coordinate and vice versa
+	g_joystickState.posY -= extraYInPx;
 	g_joystickState.strengthX = newStrengthX;
 	g_joystickState.strengthY = newStrengthY;
 }
@@ -152,7 +156,8 @@ HRESULT __stdcall detour_DX11Present(IDXGISwapChain* pSwapChain, UINT SyncInterv
 
 		auto innerCircleCenter = ImVec2(
 			(center.x + g_joystickState.strengthX * radius) / io.DisplayFramebufferScale.x,
-			(center.y + g_joystickState.strengthY * radius) / io.DisplayFramebufferScale.y
+			// Minus instead because we invert strengthY in moveJoystick
+			(center.y - g_joystickState.strengthY * radius) / io.DisplayFramebufferScale.y
 		);
 		drawList->AddCircleFilled(innerCircleCenter, radius * innerCircleRadiusFactor, circleFillColor, circleSegments);
 	}
