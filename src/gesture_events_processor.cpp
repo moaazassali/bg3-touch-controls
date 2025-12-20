@@ -38,6 +38,9 @@ static void processTap(const GestureEvent& event, POINT clientPt) {
 	// What if we send the mouse click in the processInput hook after calling the original function?
 	// Does this guarantee that the cursor position is updated correctly before processing the click?
 	// Doesn't sending move cursor and then a mouse click technically achieve the same thing anyway?
+	//
+	// Regarding the delay duration, smaller numbers seem to work generally but I can't be 100% sure.
+	// Some things to consider here are probably the game's frame rate and our input processing rate.
 	auto task = []() {sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);};
 	scheduleTask(task, std::chrono::milliseconds(10));
 }
@@ -158,6 +161,7 @@ static uint32_t cameraTouchInputId = 0;
 
 static void processDrag(const GestureEvent& event, POINT clientPt) {
 	// We need to differentiate between drags done over UI or over the game world.
+	// Drags are used in UI for things like scrollbars and drag and drop.
 	// We can use a game global struct that tracks whether the cursor is over UI or not.
 	// Similar to the move cursor -> click delay needed, we need to move the cursor first
 	// and then wait a bit for the boolean we're interested in to be updated.
@@ -177,6 +181,9 @@ static void processDrag(const GestureEvent& event, POINT clientPt) {
 		if (event.phase == Start) {
 			if (*reverse::g_isCursorOverUI) {
 				dragStartedOverUI = true;
+				// We could later investigate making UI interactions work directly with action requests
+				// instead of SDL events.
+				sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
 			}
 			else {
 				// Move cursor offscreen to avoid hover effects due to our moveCursor call above.
@@ -202,6 +209,7 @@ static void processDrag(const GestureEvent& event, POINT clientPt) {
 			}
 			if (event.touchInputId == cameraTouchInputId) {
 				handleCameraRotation(dragData.deltaX, event.phase);
+				// Accesses global array, but should be fine because our calls are always in order with large enough delays.
 				handlePitchUpdate(dragData.deltaY, event.phase);
 			}
 		}
@@ -213,6 +221,9 @@ static void processDrag(const GestureEvent& event, POINT clientPt) {
 			}
 			if (event.touchInputId == cameraTouchInputId) {
 				cameraTouchInputId = 0;
+			}
+			if (dragStartedOverUI) {
+				sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
 			}
 			dragStartedOverUI = false;
 		}
