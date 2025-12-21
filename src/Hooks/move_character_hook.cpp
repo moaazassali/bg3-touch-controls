@@ -110,3 +110,32 @@ bool installMoveCharacterHook(uintptr_t start, uintptr_t end)
 	targetAddr = callAddr + 5 + relativeOffset;
 	return installHook((void*)targetAddr, &detour_moveCharacter, (void**)&original_moveCharacter, "moveCharacter");
 }
+
+
+bool installRunMoveCharacterwithoutControllerPatch(uintptr_t start, uintptr_t end) {
+	// The function that calls moveCharacter has a check to see if a controller is connected.
+	// .text:00007FF6D7021990    mov  rbx, qword ptr [rbp+57h+var_50]
+	// .text:00007FF6D7021994    mov  rsi, qword ptr [rbp+57h+var_50+8]
+	// .text:00007FF6D7021998    cmp  cs:isInControllerModeFlag, 0
+	// .text:00007FF6D702199F    jz   loc_7FF6D7021BCB
+	constexpr const char* pattern = "48 8B 5D 07 48 8B 75 0F 80 3D ?? ?? ?? ?? 00 0F 84";
+	constexpr const char* patternName = "runMoveCharacterWithoutController";
+	constexpr std::size_t offset = 15;
+
+	auto patternAddr = findPattern(pattern, start, end);
+
+	if (patternAddr == 0) {
+		std::cout << "Failed to find pattern for " << patternName << std::endl;
+		return false;
+	}
+
+	bool patched1 = asmPatchAtOffset(patternAddr, offset, std::vector<uint8_t>{0x90, 0x90, 0x90, 0x90, 0x90, 0x90}, patternName);
+
+	if (!patched1) {
+		std::cout << "Failed to patch " << patternName << std::endl;
+		return false;
+	}
+
+	std::cout << "Successfully installed minimum hotbar rows patch." << std::endl;
+	return true;
+}

@@ -23,6 +23,7 @@ bool installFilterPreFinalActionsQueueHook(uintptr_t start, uintptr_t end);
 bool installMoveCharacterHook(uintptr_t start, uintptr_t end);
 
 bool installMinimumHotbarRowsPatch(uintptr_t start, uintptr_t end);
+bool installRunMoveCharacterwithoutControllerPatch(uintptr_t start, uintptr_t end);
 
 bool installRegisterHotBarUIBindingsHook(uintptr_t start, uintptr_t end);
 bool installIncreaseHotBarUIBindingHandlersStructSizePatch(uintptr_t start, uintptr_t end);
