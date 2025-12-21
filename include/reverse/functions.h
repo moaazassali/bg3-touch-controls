@@ -27,6 +27,8 @@ namespace reverse {
 
 	// Unknown return type and parameters
 	// Called repeatedly (not sure about interval) when using controller to check if character should be moved
+	// NOPing this stops character movement via controller left stick input
+	// First called on world load
 	using moveCharacter_t = void* (*)(void* a1, void* a2, void* a3);
 	constexpr const char* pattern_moveCharacter = "E8 ?? ?? ?? ?? F3 0F 10 55 ?? F3 0F 10 45 ?? F3 0F 10 4D ?? F3 0F 10 35";
 
