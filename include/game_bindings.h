@@ -32,6 +32,9 @@ bool installRegisterHotBarUIBindingHandlersHook(uintptr_t start, uintptr_t end);
 bool installDX11PresentHook();
 
 
+bool installMoveInternalCursorModule(uintptr_t start, uintptr_t end);
+
+
 extern reverse::getActionRequestsBuffer_t original_getActionRequestsBuffer;
 extern reverse::pushToActionRequestsQueue_t original_pushToActionRequestsQueue;
 extern reverse::processActionRequestsQueue_t original_processActionRequestsQueue;

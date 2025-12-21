@@ -76,3 +76,30 @@ SIZE getWindowSizePx(HWND hwnd)
 	}
 	return { rect.right - rect.left, rect.bottom - rect.top };
 }
+
+
+void printModuleInstallHeader(const char* moduleName)
+{
+	std::cout << "===== Installing " << moduleName << " Module =====" << std::endl;
+}
+
+
+void printModuleInstallResult(bool success)
+{
+	if (success) {
+		std::cout << "Success :)" << std::endl;
+	}
+	else {
+		std::cout << "FAILED" << std::endl;
+	}
+}
+
+void printPatternNotFoundError(const char* pattern, const char* patternName)
+{
+	std::cout << "Failed to find pattern " << pattern << " for " << patternName << "." << std::endl;
+}
+
+void printPatternFoundMessage(uintptr_t address, const char* patternName)
+{
+	std::cout << "Found pattern for " << patternName << " at address: 0x" << std::hex << address << std::dec << std::endl;
+}

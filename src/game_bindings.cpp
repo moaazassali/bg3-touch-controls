@@ -148,6 +148,8 @@ static void installHooks(uintptr_t start, uintptr_t end)
 	success &= installMoveCharacterHook(start, end);
 	success &= installRunMoveCharacterwithoutControllerPatch(start, end);
 
+	success &= installMoveInternalCursorModule(start, end);
+
 	if (success) {
 		std::cout << "All hooks installed successfully." << std::endl;
 	}

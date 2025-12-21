@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "utils.h"
 #include "game_bindings.h"
 
 
@@ -50,15 +51,16 @@ bool getInternalCursorCoordinatesAddress(uintptr_t start, uintptr_t end)
 	// .text:00007FF793BE7593    mov    rax, cs:g_pCursorPosition
 	// .text:00007FF793BE759A    movsd  qword ptr[rax], xmm0
 	constexpr const char* pattern = "48 8B 05 ?? ?? ?? ?? F2 0F 11 00";
-	uintptr_t matchAddr = findPattern(pattern, start, end);
+	uintptr_t patternAddr = findPattern(pattern, start, end);
 
-	if (!matchAddr) {
-		std::cout << "Failed to find getInternalCursorPosition pattern." << std::endl;
+	if (!patternAddr) {
+		printPatternNotFoundError(pattern, "getInternalCursorCoordinatesAddress");
 		return false;
 	}
 
-	int32_t relativeOffset = *reinterpret_cast<int32_t*>(matchAddr + 3);
-	pInternalCursorCoordinates = reinterpret_cast<void*>(matchAddr + 7 + relativeOffset);
+	int32_t relativeOffset = *reinterpret_cast<int32_t*>(patternAddr + 3);
+	pInternalCursorCoordinates = reinterpret_cast<void*>(patternAddr + 7 + relativeOffset);
+	printPatternFoundMessage((uintptr_t)pInternalCursorCoordinates, "getInternalCursorCoordinatesAddress");
 	return true;
 }
 
