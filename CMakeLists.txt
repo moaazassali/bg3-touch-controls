@@ -45,6 +45,7 @@ add_library (BG3TouchControls SHARED
 	"src/touch_handler.cpp"
 	"src/gesture_events_processor.cpp"
 	"src/Hooks/move_character_hook.cpp"
+	"src/move_internal_cursor/update_internal_cursor_coordinates.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
