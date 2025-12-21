@@ -41,3 +41,5 @@ namespace reverse {
 	extern InputManager* g_inputManager;
 	extern bool* g_isCursorOverUI;
 }
+
+extern bool g_gameWorldLoaded;

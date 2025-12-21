@@ -191,7 +191,7 @@ static void processDrag(const GestureEvent& event, POINT clientPt) {
 
 				// Joystick activation area is left half of the screen
 				auto windowSize = getWindowSizePx(g_gameHwnd);
-				if (clientPt.x < windowSize.cx / 2) {
+				if (clientPt.x < windowSize.cx / 2 && g_gameWorldLoaded) {
 					auto& dragData = std::get<DragData>(event.data);
 					activateJoystick((float)(clientPt.x - dragData.deltaX), (float)(clientPt.y - dragData.deltaY));
 					joystickTouchInputId = event.touchInputId;

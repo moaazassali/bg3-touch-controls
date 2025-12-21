@@ -89,6 +89,10 @@ void releaseJoystick()
 // This way, the user can still switch directions without having to go all the way back to center first.
 void moveJoystick(float translationX, float translationY)
 {
+	if (!g_joystickState.isActive) {
+		return;
+	}
+
 	// Invert translationY because screen Y+ is down but joystick Y+ is up
 	translationY = -translationY;
 

@@ -14,6 +14,8 @@ static int32_t overrideFlagOffset = 0;
 static int32_t xValueOffset = 0;
 static int32_t yValueOffset = 0;
 
+bool g_gameWorldLoaded = false;
+
 
 static void* detour_moveCharacter(void* a1, void* a2, void* a3)
 {
@@ -55,14 +57,15 @@ static void* detour_moveCharacter(void* a1, void* a2, void* a3)
 		xValueOffset = *reinterpret_cast<int32_t*>(overrideValuesOffsetAddr + 5);
 		yValueOffset = *reinterpret_cast<int32_t*>(overrideValuesOffsetAddr + 14);
 
-		init = true;
-
 		if (globalPointerAddr && overrideFlagOffset != 0 && xValueOffset != 0 && yValueOffset != 0) {
 			initSuccess = true;
 		}
 		else {
 			initSuccess = false;
 		}
+
+		init = true;
+		g_gameWorldLoaded = true;
 	}
 
 	// Only override if joystick is active
