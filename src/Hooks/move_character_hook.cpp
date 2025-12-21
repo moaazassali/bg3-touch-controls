@@ -65,7 +65,10 @@ static void* detour_moveCharacter(void* a1, void* a2, void* a3)
 		}
 	}
 
-	if (!initSuccess) {
+	// Only override if joystick is active
+	// This allows normal controller input to work when joystick is not used
+	// because we are otherwise overriding the value with zeroes
+	if (!initSuccess || !g_joystickState.isActive) {
 		return original_moveCharacter(a1, a2, a3);
 	}
 
