@@ -135,74 +135,66 @@ static uint32_t cameraTouchInputId = 0;
 static void processDrag(const GestureEvent& event, POINT clientPt) {
 	// We need to differentiate between drags done over UI or over the game world.
 	// Drags are used in UI for things like scrollbars and drag and drop.
-	// We can use a game global struct that tracks whether the cursor is over UI or not.
-	// Similar to the move cursor -> click delay needed, we need to move the cursor first
-	// and then wait a bit for the boolean we're interested in to be updated.
 	// We need to move the cursor at the beginning just to determine if we *started* over UI.
 	// Cursor movement is otherwise not needed for non-UI interactions and actually causes
 	// unwanted behavior like item/npc hover effects.
-	if (event.phase == Start) {
-		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
-		dragStartedOverUI = false;
-	}
-	if (dragStartedOverUI) {
-		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
-	}
+	auto& dragData = std::get<DragData>(event.data);
 
-	auto task = [event, clientPt]() {
-		// Now that we have waited a bit, we can check if we started over UI.
-		if (event.phase == Start) {
-			if (*reverse::g_isCursorOverUI) {
-				dragStartedOverUI = true;
-				// We could later investigate making UI interactions work directly with action requests
-				// instead of SDL events.
-				sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
+	if (event.phase == Start) {
+		// clientPt is current position with any initial delta, not the start position
+		auto startX = clientPt.x - dragData.deltaX;
+		auto startY = clientPt.y - dragData.deltaY;
+		dragStartedOverUI = moveInternalCursor((float)startX, (float)startY);
+		if (dragStartedOverUI) {
+			// We could later investigate making UI interactions work directly with action requests
+			// instead of SDL events.
+			sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
+		}
+		else {
+			// Joystick activation area is left half of the screen
+			auto windowSize = getWindowSizePx(g_gameHwnd);
+			if (clientPt.x < windowSize.cx / 2 && g_gameWorldLoaded) {
+				activateJoystick((float)startX, (float)startY);
+				joystickTouchInputId = event.touchInputId;
 			}
 			else {
-				// Move cursor offscreen to avoid hover effects due to our moveCursor call above.
-				sdl_bindings::moveCursor(-10000, -10000);
-
-				// Joystick activation area is left half of the screen
-				auto windowSize = getWindowSizePx(g_gameHwnd);
-				if (clientPt.x < windowSize.cx / 2 && g_gameWorldLoaded) {
-					auto& dragData = std::get<DragData>(event.data);
-					activateJoystick((float)(clientPt.x - dragData.deltaX), (float)(clientPt.y - dragData.deltaY));
-					joystickTouchInputId = event.touchInputId;
-				}
-				else {
-					cameraTouchInputId = event.touchInputId;
-				}
+				cameraTouchInputId = event.touchInputId;
 			}
 		}
+	}
 
-		if (!dragStartedOverUI) {
-			auto& dragData = std::get<DragData>(event.data);
-			if (g_joystickState.isActive && event.touchInputId == joystickTouchInputId) {
-				moveJoystick(dragData.deltaX, dragData.deltaY);
-			}
-			if (event.touchInputId == cameraTouchInputId) {
-				handleCameraRotation(dragData.deltaX, event.phase);
-				// Accesses global array, but should be fine because our calls are always in order with large enough delays.
-				handlePitchUpdate(dragData.deltaY, event.phase);
-			}
+	if (dragStartedOverUI) {
+		// We can't use moveInternalCursor here because we need the UIMouseMove action requests
+		// to be generated for UI drags to work. We could be sending the action requests ourselves
+		// directly, but I don't think that provides any benefit.
+		if (event.phase == Update) {
+			sdl_bindings::moveCursor(clientPt.x, clientPt.y);
 		}
-
-		if (event.phase == End) {
-			if (event.touchInputId == joystickTouchInputId) {
-				releaseJoystick();
-				joystickTouchInputId = 0;
-			}
-			if (event.touchInputId == cameraTouchInputId) {
-				cameraTouchInputId = 0;
-			}
-			if (dragStartedOverUI) {
-				sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
-			}
-			dragStartedOverUI = false;
+	}
+	else {
+		if (g_joystickState.isActive && event.touchInputId == joystickTouchInputId) {
+			moveJoystick(dragData.deltaX, dragData.deltaY);
 		}
-		};
+		if (event.touchInputId == cameraTouchInputId) {
+			handleCameraRotation(dragData.deltaX, event.phase);
+			// Accesses global array, but should be fine because our calls are always in order with large enough delays.
+			handlePitchUpdate(dragData.deltaY, event.phase);
+		}
+	}
 
-	scheduleTask(task, std::chrono::milliseconds(10));
+	if (event.phase == End) {
+		if (event.touchInputId == joystickTouchInputId) {
+			releaseJoystick();
+			joystickTouchInputId = 0;
+		}
+		if (event.touchInputId == cameraTouchInputId) {
+			cameraTouchInputId = 0;
+		}
+		if (dragStartedOverUI) {
+			sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
+		}
+		dragStartedOverUI = false;
+	}
 }
 
 
