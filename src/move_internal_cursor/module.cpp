@@ -1,6 +1,5 @@
 #include "move_internal_cursor.h"
 #include "utils.h"
-#include "game_bindings.h"
 
 
 bool installRawInputHandlerHook(uintptr_t start, uintptr_t end);

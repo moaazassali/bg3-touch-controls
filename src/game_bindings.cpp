@@ -7,6 +7,7 @@
 #include "game_bindings.h"
 #include "reverse/functions.h"
 #include "reverse/internal_cursor_position.h"
+#include "move_internal_cursor.h"
 
 
 reverse::getActionRequestsBuffer_t original_getActionRequestsBuffer = nullptr;
