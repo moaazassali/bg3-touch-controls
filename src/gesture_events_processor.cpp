@@ -25,9 +25,8 @@ static void processHold(const GestureEvent& event, POINT clientPt) {
 	// and another when the finger is lifted.
 	// We don't want to send another click when the finger is lifted.
 	if (event.phase == Update) {
-		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
-		auto task = []() {sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);};
-		scheduleTask(task, std::chrono::milliseconds(10));
+		moveInternalCursor((float)clientPt.x, (float)clientPt.y);
+		sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
 	}
 }
 
