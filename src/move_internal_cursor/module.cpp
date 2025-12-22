@@ -1,3 +1,4 @@
+#include "move_internal_cursor.h"
 #include "utils.h"
 #include "game_bindings.h"
 
