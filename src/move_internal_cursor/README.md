@@ -127,10 +127,38 @@ This way, the `isCursorOverUI` flag is updated immediately after moving the
 cursor, and we can safely execute any sequence of events that depend on the
 cursor position.
 
-There is one more caveat here. `updateCursorOverUIFlagCallback` doesn't update
-`isCursorOverUI` to false if the hit test fails. Instead, it sets some flag
-which (I think) indicates that the last hit test failed and that the game
-should re-evaluate `isCursorOverUI` the next frame. So, if we fail a hit test,
-we also need to manually call a function I call `updateCursorOverUIFlag` that
-`updateCursorOverUIFlagCallback` calls so we can ensure the flag is updated
-immediately in this case as well.
+### Caveat 1: Failing the hit test doesn't update `isCursorOverUI` flag
+`updateCursorOverUIFlagCallback` doesn't update `isCursorOverUI` to false if
+the hit test fails. Instead, it sets some flag which (I think) indicates that
+the last hit test failed and that the game should re-evaluate `isCursorOverUI`
+the next frame. So, if we fail a hit test, we also need to manually call a
+function I call `updateCursorOverUIFlag` that  `updateCursorOverUIFlagCallback`
+calls so we can ensure the flag is updated immediately in this case as well.
+
+This is all of what's done in `updateCursorOverUIFlagCallback`:
+```c
+void __fastcall updateCursorOverUIFlagCallback(__int64 a1, __int64 a2) {
+  *(a1 + 136) = a2;
+  if ( a2 )
+    updateCursorOverUIFlag(a1);
+  else
+    *(a1 + 449) |= 2u;
+}
+```
+So, we don't need to call the callback; we can just directly call
+`updateCursorOverUIFlag` and set the UI element field ourselves. We don't need
+to set the 're-evaluate' flag either because we are doing the re-evaluation.
+
+### Caveat 2: A cache of cursor coordinates is used if hit test fails
+This is what `updateCursorOverUIFlag` does if called after the hit test fails:
+```c
+else {
+    v11 = *(a1 + 0x190);
+    v7 = (*(**(a1 + 112) + 56LL))(*(a1 + 112));
+    *(a1 + 384) = sub_7FF79576E1D0(v7, &v11) != 0;
+}
+```
+`*(a1 + 0x190)` is a cached copy of the last known cursor coordinates from the
+last frame. So, we also have to update this cache when we move the cursor.
+Otherwise, if the hit test fails, the game will use stale coordinates that were
+over a UI element and incorrectly set `isCursorOverUI` to true.
