@@ -126,3 +126,11 @@ element from the hit test if successful.
 This way, the `isCursorOverUI` flag is updated immediately after moving the
 cursor, and we can safely execute any sequence of events that depend on the
 cursor position.
+
+There is one more caveat here. `updateCursorOverUIFlagCallback` doesn't update
+`isCursorOverUI` to false if the hit test fails. Instead, it sets some flag
+which (I think) indicates that the last hit test failed and that the game
+should re-evaluate `isCursorOverUI` the next frame. So, if we fail a hit test,
+we also need to manually call a function I call `updateCursorOverUIFlag` that
+`updateCursorOverUIFlagCallback` calls so we can ensure the flag is updated
+immediately in this case as well.
