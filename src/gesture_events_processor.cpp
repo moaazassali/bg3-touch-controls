@@ -188,6 +188,11 @@ static void processDrag(const GestureEvent& event, POINT clientPt) {
 			if (clientPt.x < windowSize.cx / 2 && g_gameWorldLoaded) {
 				activateJoystick((float)startX, (float)startY);
 				joystickTouchInputId = event.touchInputId;
+				// Send right click to disable force stop any active click-to-move character movement
+				// Character movement with joystick doesn't work otherwise until the previous movement ends
+				// This shouldn't cause any unintended side effects because we are not over UI and because
+				// world interactions are frozen.
+				sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
 			}
 			else {
 				cameraTouchInputId = event.touchInputId;
