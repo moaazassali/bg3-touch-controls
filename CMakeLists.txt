@@ -48,6 +48,7 @@ add_library (BG3TouchControls SHARED
 	"src/move_internal_cursor/module.cpp"
 	"src/move_internal_cursor/update_internal_cursor_coordinates.cpp"
 	"src/move_internal_cursor/update_cursor_over_ui_flag.cpp"
+	"src/world_interaction/module.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")

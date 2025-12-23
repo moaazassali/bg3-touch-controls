@@ -8,6 +8,7 @@
 #include "reverse/functions.h"
 #include "reverse/internal_cursor_position.h"
 #include "move_internal_cursor.h"
+#include "world_interaction.h"
 
 
 reverse::getActionRequestsBuffer_t original_getActionRequestsBuffer = nullptr;
@@ -150,6 +151,7 @@ static void installHooks(uintptr_t start, uintptr_t end)
 	success &= installRunMoveCharacterwithoutControllerPatch(start, end);
 
 	success &= installMoveInternalCursorModule(start, end);
+	success &= installWorldInteractionModule(start, end);
 
 	if (success) {
 		std::cout << "All hooks installed successfully." << std::endl;
