@@ -59,7 +59,7 @@ static void processHold(const GestureEvent& event, POINT clientPt) {
 
 
 static void handleCameraRotation(int deltaX, TouchPhase phase) {
-	constexpr float rotationScaleFactor = 0.5f;
+	constexpr float rotationScaleFactor = 0.25f; // Make configurable
 	auto isSwipingRight = deltaX >= 0;
 	auto strength = std::abs(deltaX * rotationScaleFactor);
 
