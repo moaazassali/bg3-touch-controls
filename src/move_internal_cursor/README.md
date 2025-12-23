@@ -177,7 +177,7 @@ is on a world object (and not the ground), it hovers over the item but then
 moves the character to the old cursor position. I still don't fully understand
 the issue though. Maybe I am making things up here.
 
-If we need to syncronously update the world interaction state after moving the
+If we need to synchronously update the world interaction state after moving the
 cursor, then we could call `worldInteractionUpdater` directly. However, I think
 that would not work either because I think the issue is that it relies on the
 result from an async consumer that it dispatches the ray cast result to. So,

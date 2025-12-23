@@ -19,8 +19,14 @@ static void processTap(const GestureEvent& event, POINT clientPt) {
 	auto task = []() {
 		sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);
 		};
-	// Refer to move_internal_cursor/README.md for explanation about the delay
-	callAfterGameProcessesCursorUpdate(task);
+
+	if (isCursorOverUI()) {
+		task();
+	}
+	else {
+		// Refer to move_internal_cursor/README.md for why we need a delay for world clicks
+		callAfterGameProcessesCursorUpdate(task);
+	}
 }
 
 
@@ -33,8 +39,14 @@ static void processHold(const GestureEvent& event, POINT clientPt) {
 		auto task = []() {
 			sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
 			};
-		// Refer to move_internal_cursor/README.md for explanation about the delay
-		callAfterGameProcessesCursorUpdate(task);
+
+		if (isCursorOverUI()) {
+			task();
+		}
+		else {
+			// Refer to move_internal_cursor/README.md for why we need a delay for world clicks
+			callAfterGameProcessesCursorUpdate(task);
+		}
 	}
 }
 
