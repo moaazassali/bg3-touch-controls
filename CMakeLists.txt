@@ -49,7 +49,7 @@ add_library (BG3TouchControls SHARED
 	"src/move_internal_cursor/update_internal_cursor_coordinates.cpp"
 	"src/move_internal_cursor/update_cursor_over_ui_flag.cpp"
 	"src/world_interaction/module.cpp"
-	"src/world_interaction/disable_world_hover_effects.cpp"
+	"src/world_interaction/modify_world_interaction_target_state.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")

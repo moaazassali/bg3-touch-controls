@@ -16,13 +16,19 @@ bool installWorldInteractionModule(uintptr_t start, uintptr_t end) {
 
 void bypassWorldInteractionTargetResolver();
 void useOriginalWorldInteractionTargetResolver();
+void resetWorldInteractionTargetResolver_a1();
 
 
-void disableWorldHoverEffects() {
+void freezeProcessingWorldEntityInteractions() {
 	bypassWorldInteractionTargetResolver();
 }
 
 
-void enableWorldHoverEffects() {
+void resumeProcessingWorldEntityInteractions() {
 	useOriginalWorldInteractionTargetResolver();
+}
+
+
+void clearActiveWorldEntityInteractions() {
+	resetWorldInteractionTargetResolver_a1();
 }

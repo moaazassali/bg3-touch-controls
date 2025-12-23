@@ -4,6 +4,8 @@
 
 bool installWorldInteractionModule(uintptr_t start, uintptr_t end);
 
-void disableWorldHoverEffects();
+void freezeProcessingWorldEntityInteractions();
 
-void enableWorldHoverEffects();
+void resumeProcessingWorldEntityInteractions();
+
+void clearActiveWorldEntityInteractions();
