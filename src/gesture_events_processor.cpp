@@ -9,15 +9,19 @@
 #include "reverse/action_sequences/action_sequences.h"
 #include "pending_camera_updates.h"
 #include "move_internal_cursor.h"
+#include "world_interaction.h"
 
 
 extern HWND g_gameHwnd;
 
 
 static void processTap(const GestureEvent& event, POINT clientPt) {
+	resumeProcessingWorldEntityInteractions();
 	moveInternalCursor((float)clientPt.x, (float)clientPt.y);
 	auto task = []() {
 		sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);
+		// Keep hovering over the clicked entity for better visual feedback
+		freezeProcessingWorldEntityInteractions();
 		};
 
 	if (isCursorOverUI()) {
@@ -35,9 +39,12 @@ static void processHold(const GestureEvent& event, POINT clientPt) {
 	// and another when the finger is lifted.
 	// We don't want to send another click when the finger is lifted.
 	if (event.phase == Update) {
+		resumeProcessingWorldEntityInteractions();
 		moveInternalCursor((float)clientPt.x, (float)clientPt.y);
 		auto task = []() {
 			sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
+			// Keep hovering over the clicked entity for better visual feedback
+			freezeProcessingWorldEntityInteractions();
 			};
 
 		if (isCursorOverUI()) {
@@ -159,6 +166,11 @@ static void processDrag(const GestureEvent& event, POINT clientPt) {
 	// Cursor movement is otherwise not needed for non-UI interactions and actually causes
 	// unwanted behavior like item/npc hover effects.
 	auto& dragData = std::get<DragData>(event.data);
+
+	// Since we freeze hovering over world entities we tapped/held on, we need to clear that hover
+	clearActiveWorldEntityInteractions();
+	// Keep stopping interactions processing in case it was re-enabled by a tap/hold while dragging
+	freezeProcessingWorldEntityInteractions();
 
 	if (event.phase == Start) {
 		// clientPt is current position with any initial delta, not the start position
