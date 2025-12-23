@@ -16,7 +16,11 @@ extern HWND g_gameHwnd;
 
 static void processTap(const GestureEvent& event, POINT clientPt) {
 	moveInternalCursor((float)clientPt.x, (float)clientPt.y);
-	sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);
+	auto task = []() {
+		sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);
+		};
+	// Refer to move_internal_cursor/README.md for explanation about the delay
+	callAfterGameProcessesCursorUpdate(task);
 }
 
 
@@ -26,7 +30,11 @@ static void processHold(const GestureEvent& event, POINT clientPt) {
 	// We don't want to send another click when the finger is lifted.
 	if (event.phase == Update) {
 		moveInternalCursor((float)clientPt.x, (float)clientPt.y);
-		sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
+		auto task = []() {
+			sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
+			};
+		// Refer to move_internal_cursor/README.md for explanation about the delay
+		callAfterGameProcessesCursorUpdate(task);
 	}
 }
 

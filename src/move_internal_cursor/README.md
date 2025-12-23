@@ -162,3 +162,31 @@ else {
 last frame. So, we also have to update this cache when we move the cursor.
 Otherwise, if the hit test fails, the game will use stale coordinates that were
 over a UI element and incorrectly set `isCursorOverUI` to true.
+
+
+### Caveat 3: World interaction coordinates cache for clicks
+There is a function I call `worldInteractionUpdater` that runs every frame and
+accesses the global mouse coordinates to do ray casting in the game world for
+world interaction (like hover effects and clicks on world objects). Refer to
+the 'World Interaction' module for more details.
+
+What is relevant here is that `worldInteractionUpdater` seems to use a cached
+copy of the 2D->3D ray cast from the last frame to handle world object clicks.
+So, if we move the internal cursor and then immediately send a click event that
+is on a world object (and not the ground), it hovers over the item but then
+moves the character to the old cursor position. I still don't fully understand
+the issue though. Maybe I am making things up here.
+
+If we need to syncronously update the world interaction state after moving the
+cursor, then we could call `worldInteractionUpdater` directly. However, I think
+that would not work either because I think the issue is that it relies on the
+result from an async consumer that it dispatches the ray cast result to. So,
+we will end up with the same stale data issue. We could instead do ray casting
+ourselves and also call the consumer directly, but that seems very complicated.
+
+Instead, we will settle for a compromise: for world interaction events, we will
+schedule a task that runs in the frame after the frame that first read the new
+cursor coordinates we updated. This way, we give enough time for the async 
+consumer to process the new coordinates before we tell it to handle world
+clicks again. This only affects taps and holds that interact with world
+objects, so the two frame delay should still feel responsive.

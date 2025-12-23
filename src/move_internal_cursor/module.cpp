@@ -23,6 +23,7 @@ bool installMoveInternalCursorModule(uintptr_t start, uintptr_t end) {
 void updateInternalCursorCoordinates(float x, float y);
 bool updateCursorOverUIFlag(float x, float y);
 bool getIsCursorOverUIFlag();
+void registerDeferredTask(int framesDelay, std::function<void()> func);
 
 
 // x and y are window coordinates from top-left corner in pixels, not screen coordinates
@@ -34,4 +35,16 @@ bool moveInternalCursor(float x, float y) {
 
 bool isCursorOverUI() {
 	return getIsCursorOverUIFlag();
+}
+
+
+void callAfterGameProcessesCursorUpdate(std::function<void()> func) {
+	// 2 frames is the minimum delay needed to guarantee the game processed the cursor update
+	// If the hooked function is not running right now, then our cursor update will be processed
+	// in the next frame, so we need to wait one more frame after that.
+	// In the rare case the hooked function is running right now, and our cursor update happens
+	// before it decides to trigger cursor update side effects, then 1 frame will be enough.
+	// So to cover all cases, we use 2 frames delay.
+	constexpr int framesDelay = 2;
+	registerDeferredTask(framesDelay, func);
 }

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <mutex>
 
 #include "utils.h"
 #include "game_bindings.h"
@@ -11,6 +12,14 @@ static void* pInternalCursorCoordinates = nullptr;
 static void* pWindowInstance = nullptr;
 using scaleCoordinatesFunc_t = float* (*)(void* pWindowInstance, float* pOut, float* pIn);
 static scaleCoordinatesFunc_t pScaleCoordinatesFunc = nullptr;
+
+
+struct DeferredTask {
+	int remainingFrames = -1;
+	std::function<void()> taskFunc = nullptr;
+};
+DeferredTask pendingTask;
+std::mutex taskMutex;
 
 
 static void detour_rawInputHandler(void* a1, void* a2)
@@ -33,6 +42,19 @@ static void detour_rawInputHandler(void* a1, void* a2)
 	pWindowInstance = *(void**)((uintptr_t)a1 + 16);
 	void** vtable = *(void***)pWindowInstance;
 	pScaleCoordinatesFunc = (scaleCoordinatesFunc_t)vtable[33]; // 264 / 8 = 33
+
+
+	// Deferred task execution
+	{
+		std::lock_guard<std::mutex> lock(taskMutex);
+		if (pendingTask.remainingFrames > 0) {
+			pendingTask.remainingFrames--;
+			if (pendingTask.remainingFrames == 0 && pendingTask.taskFunc) {
+				pendingTask.taskFunc();
+				pendingTask.taskFunc = nullptr;
+			}
+		}
+	}
 
 	return original_updateInternalCursorState(a1, a2);
 }
@@ -78,4 +100,11 @@ void updateInternalCursorCoordinates(float x, float y) {
 	float* pCursorPos = *(float**)pInternalCursorCoordinates;
 	pCursorPos[0] = scaledCoords[0];
 	pCursorPos[1] = scaledCoords[1];
+}
+
+
+// Schedules a function to be called after N frames
+void registerDeferredTask(int framesDelay, std::function<void()> func) {
+	pendingTask.remainingFrames = framesDelay;
+	pendingTask.taskFunc = func;
 }
