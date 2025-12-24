@@ -159,7 +159,7 @@ static bool dragStartedOverUI = false;
 static uint32_t joystickTouchInputId = 0;
 static uint32_t cameraTouchInputId = 0;
 
-static void processDrag(const GestureEvent& event, POINT clientPt) {
+static void processOneContactDrag(const GestureEvent& event, POINT clientPt) {
 	// We need to differentiate between drags done over UI or over the game world.
 	// Drags are used in UI for things like scrollbars and drag and drop.
 	// We need to move the cursor at the beginning just to determine if we *started* over UI.
@@ -245,7 +245,12 @@ static void processSingleGestureEvent(const GestureEvent& event, POINT clientPt)
 		processHold(event, clientPt);
 		break;
 	case Drag:
-		processDrag(event, clientPt);
+		if (event.contactCount == 1) {
+			processOneContactDrag(event, clientPt);
+		}
+		else if (event.contactCount == 2) {
+			// TODO: Move two contact drag handling from old interaction context to here
+		}
 		break;
 	default:
 		std::cout << "Other gesture detected: " << event.type << std::endl;

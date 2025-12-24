@@ -57,6 +57,7 @@ void TouchHandler::updateTouchInputState(TouchInputState& state, const TouchInpu
 		(input.timestamp - state.startTime) < HOLD_THRESHOLD &&
 		state.phase == End) {
 		state.gesture = Tap;
+		return;
 	}
 
 	// === Hold ===
@@ -64,7 +65,30 @@ void TouchHandler::updateTouchInputState(TouchInputState& state, const TouchInpu
 		(input.timestamp - state.startTime) >= HOLD_THRESHOLD) {
 		state.gesture = Hold;
 		state.reachedHoldThreshold = true;
+		return;
 	}
+
+	// === Two finger drag ===
+	if (state.exceededTapSlop) {
+		// Check if any active touch exceeded tap slop recently and started around the
+		// same time as this touch.
+		for (int i = 0; i < MAX_STATES; ++i) {
+			TouchInputState& otherState = touchInputStates[i];
+			if (&otherState != &state &&
+				otherState.active &&
+				otherState.exceededTapSlop &&
+				otherState.gesture == None &&
+				abs(state.startTime - otherState.startTime) < MULTI_CONTACT_THRESHOLD) {
+				// Found another touch that is part of a multi-contact drag
+				state.gesture = Drag;
+				otherState.gesture = Drag;
+				state.correlationTouchId = otherState.touchId;
+				otherState.correlationTouchId = state.touchId;
+				return;
+			}
+		}
+	}
+
 
 	// === Drag ===
 	// Everything is technically a drag including taps and holds since a touch will move
@@ -72,8 +96,19 @@ void TouchHandler::updateTouchInputState(TouchInputState& state, const TouchInpu
 	// all other gestures.
 	// With the introduction of hold, we have a new possibility: a hold can transition into a drag
 	// For now, we will consider that to remain a hold until the touch ends.
-	if (state.exceededTapSlop) {
+	if (state.exceededTapSlop &&
+		(input.timestamp - state.startTime) >= MULTI_CONTACT_THRESHOLD) {
 		state.gesture = Drag;
+		return;
+	}
+
+	// We can only reach here if the touch exceeded tap slop and was released quickly
+	// before MULTI_CONTACT_THRESHOLD. In that case, we deactivate it so we don't have
+	// lingering active touches with no gesture.
+	// We should think about reporting this as a drag.
+	// Also acts as a safe guard in case of any unforeseen edge cases.
+	if (state.phase == End) {
+		state.active = false;
 	}
 }
 
@@ -101,6 +136,7 @@ void TouchHandler::addTouchInputEvent(const TouchInputEvent& input) {
 			freeState->sentInitialHoldEvent = false;
 			freeState->lastConsumedX = input.x;
 			freeState->lastConsumedY = input.y;
+			freeState->correlationTouchId = -1;
 		}
 		else {
 			// MAX_STATES reached, ignore the new touch input
@@ -116,10 +152,23 @@ void TouchHandler::addTouchInputEvent(const TouchInputEvent& input) {
 TouchHandler::GestureEventsResult TouchHandler::getGestureEvents() {
 	GestureEventsResult result{};
 	result.count = 0;
+	// if two states are part of a multi-contact gesture, we only report one event for both
+	bool foundFirstContactOfMultiContact = false;
+
 	for (int i = 0; i < MAX_STATES; ++i) {
 		TouchInputState& state = touchInputStates[i];
+		auto& event = result.events[result.count];
 		if (!state.active || state.gesture == None) {
 			continue;
+		}
+		if (state.correlationTouchId != -1) {
+			if (foundFirstContactOfMultiContact) {
+				// Already reported the event for this multi-contact gesture
+				continue;
+			}
+			else {
+				foundFirstContactOfMultiContact = true;
+			}
 		}
 
 		// Hold ends when the touch ends but there are only two interesting cases:
@@ -137,45 +186,99 @@ TouchHandler::GestureEventsResult TouchHandler::getGestureEvents() {
 		}
 
 		// Common for all gestures
-		result.events[result.count].touchInputId = state.touchId;
-		result.events[result.count].type = state.gesture;
-		result.events[result.count].phase = state.phase;
-		result.events[result.count].x = state.currentX;
-		result.events[result.count].y = state.currentY;
-		// We only support single contact for now
-		result.events[result.count].contactCount = 1;
-		// Populate per-contact data
-		result.events[result.count].contacts[0] = {
-			.x = state.currentX,
-			.y = state.currentY,
-		};
+		event.touchInputId = state.touchId;
+		event.type = state.gesture;
+		event.phase = state.phase;
+		event.x = state.currentX;
+		event.y = state.currentY;
+
+		// We only support single contact for taps and holds for now
+		if (state.gesture == Tap || state.gesture == Hold) {
+			event.contactCount = 1;
+			event.contacts[0] = {
+				.x = state.currentX,
+				.y = state.currentY,
+			};
+		}
 
 
 		if (state.gesture == Drag) {
-			DragData dragData{
-				.deltaX = state.currentX - state.lastConsumedX,
-				.deltaY = state.currentY - state.lastConsumedY,
+			// If 3 drags are active with 2 of them correlated, we need to make sure we process the
+			// non-correlated one as a single contact drag.
+			bool processingMultiContact = foundFirstContactOfMultiContact && state.correlationTouchId != -1;
+
+			// For drag, we can have either one or two contacts
+			// One contact exists either way, so populate it first
+			event.contacts[0] = {
+				.x = state.currentX,
+				.y = state.currentY,
+				.data = PerContactDragData{
+					.deltaX = state.currentX - state.lastConsumedX,
+					.deltaY = state.currentY - state.lastConsumedY,
+				},
 			};
+
+			TouchInputState* otherState = nullptr;
+			if (processingMultiContact) {
+				// find the second contact state
+				otherState = findStateById(state.correlationTouchId);
+				event.contacts[1] = {
+					.x = otherState->currentX,
+					.y = otherState->currentY,
+					.data = PerContactDragData{
+						.deltaX = otherState->currentX - otherState->lastConsumedX,
+						.deltaY = otherState->currentY - otherState->lastConsumedY,
+					},
+				};
+			}
+
+			event.contactCount = processingMultiContact ? 2 : 1;
+
+			// If two contacts, we need to get their center
+			event.x = processingMultiContact ?
+				(state.currentX + event.contacts[1].x) / 2 :
+				state.currentX;
+			event.y = processingMultiContact ?
+				(state.currentY + event.contacts[1].y) / 2 :
+				state.currentY;
+
+			// Populate overall drag data
+			event.data = DragData{
+				.deltaX = processingMultiContact ?
+					((state.currentX - state.lastConsumedX) +
+					(otherState->currentX - otherState->lastConsumedX)) / 2 :
+					(state.currentX - state.lastConsumedX),
+				.deltaY = processingMultiContact ?
+					((state.currentY - state.lastConsumedY) +
+					(otherState->currentY - otherState->lastConsumedY)) / 2 :
+					(state.currentY - state.lastConsumedY),
+				.separation = processingMultiContact ?
+					(float)std::sqrt(std::pow(state.currentX - otherState->currentX, 2) +
+						std::pow(state.currentY - otherState->currentY, 2)) :
+					0.0f,
+				.deltaSeparation = processingMultiContact ?
+					(float)(std::sqrt(std::pow(state.currentX - otherState->currentX, 2) +
+						std::pow(state.currentY - otherState->currentY, 2)) -
+						std::sqrt(std::pow(state.lastConsumedX - otherState->lastConsumedX, 2) +
+							std::pow(state.lastConsumedY - otherState->lastConsumedY, 2))) :
+					0.0f,
+			};
+
 			// The first drag event should have a Start phase instead.
 			// This can be useful if the consumer needs to run some initialization logic.
 			if (state.lastConsumedX == state.startX &&
 				state.lastConsumedY == state.startY &&
 				state.phase == Update) {
-				result.events[result.count].phase = Start;
+				event.phase = Start;
 			}
-			result.events[result.count].data = dragData;
+
+			// Update the last consumed positions
 			state.lastConsumedX = state.currentX;
 			state.lastConsumedY = state.currentY;
-
-			// Update the per-contact drag data as well
-			PerContactDragData perContactDragData{
-				.deltaX = dragData.deltaX,
-				.deltaY = dragData.deltaY,
-			};
-			result.events[result.count].contacts[0].data = perContactDragData;
-		}
-		else {
-			result.events[result.count].data = std::monostate{};
+			if (processingMultiContact) {
+				otherState->lastConsumedX = otherState->currentX;
+				otherState->lastConsumedY = otherState->currentY;
+			}
 		}
 
 		result.count++;
@@ -183,6 +286,13 @@ TouchHandler::GestureEventsResult TouchHandler::getGestureEvents() {
 		// All gestures end when the touch is released
 		if (state.phase == End) {
 			state.active = false;
+			if (foundFirstContactOfMultiContact) {
+				// Also deactivate the correlated touch state
+				TouchInputState* otherState = findStateById(state.correlationTouchId);
+				if (otherState) {
+					otherState->active = false;
+				}
+			}
 		}
 	}
 	return result;

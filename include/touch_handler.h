@@ -62,7 +62,7 @@ struct GestureEvent {
 	int y = 0;
 	int contactCount = 0;
 	PerContactData contacts[2]; // We don't support more than 2 contacts for now
-	std::variant<std::monostate, DragData> data;
+	std::variant<std::monostate, DragData> data = std::monostate{};
 };
 
 
@@ -101,6 +101,7 @@ private:
 		// Position of last gesture event reported, not last touch input update.
 		int lastConsumedX = -1;
 		int lastConsumedY = -1;
+		int correlationTouchId = -1; // For multi-contact gestures
 	};
 
 	TouchInputState touchInputStates[MAX_STATES];
