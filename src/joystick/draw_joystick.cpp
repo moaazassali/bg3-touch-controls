@@ -55,10 +55,13 @@ static void initializeImGui(IDXGISwapChain* pSwapChain)
 }
 
 
-static float calculateJoystickRadius(float windowWidth, float windowHeight)
+static float calculateJoystickRadius()
 {
-	constexpr float phoneRadiusScaleFactor = 0.12f;
-	return min(windowWidth, windowHeight) * phoneRadiusScaleFactor;
+	constexpr float radiusInCm = 1.0f;
+	constexpr float inchesInCm = 0.3937008f;
+	constexpr int DPI = 353; // Should match TouchHandler::DPI and be configurable
+	constexpr float radiusInPx = radiusInCm * inchesInCm * DPI;
+	return radiusInPx;
 }
 
 
@@ -96,9 +99,7 @@ void moveJoystick(float translationX, float translationY)
 	// Invert translationY because screen Y+ is down but joystick Y+ is up
 	translationY = -translationY;
 
-	auto& io = ImGui::GetIO();
-	float radius = calculateJoystickRadius(io.DisplaySize.x, io.DisplaySize.y);
-	float radiusPx = radius * min(io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
+	float radiusPx = calculateJoystickRadius();
 
 	auto oldStrengthXInPx = g_joystickState.strengthX * radiusPx;
 	auto oldStrengthYInPx = g_joystickState.strengthY * radiusPx;
@@ -154,8 +155,9 @@ HRESULT __stdcall detour_DX11Present(IDXGISwapChain* pSwapChain, UINT SyncInterv
 
 		auto& io = ImGui::GetIO();
 		auto center = ImVec2(g_joystickState.posX / io.DisplayFramebufferScale.x, g_joystickState.posY / io.DisplayFramebufferScale.y);
-		// Joystick radius in logical coordinates
-		float radius = calculateJoystickRadius(io.DisplaySize.x, io.DisplaySize.y);
+		float radiusPx = calculateJoystickRadius();
+		// Convert radius to logical units
+		auto radius = radiusPx / io.DisplayFramebufferScale.x;
 		drawList->AddCircle(center, radius, circleOutlineColor, circleSegments, circleThickness);
 
 		auto innerCircleCenter = ImVec2(
