@@ -41,6 +41,12 @@ void TouchHandler::updateTouchInputState(TouchInputState& state, const TouchInpu
 		return;
 	}
 
+	if (state.gesture != None) {
+		// Gesture already recognized and state was updated
+		// Nothing left to do here and we avoid mistakenly changing the gesture type
+		return;
+	}
+
 	// === Tap ===
 	if (abs(state.currentX - state.startX) > TAP_SLOP_PX ||
 		abs(state.currentY - state.startY) > TAP_SLOP_PX) {
@@ -66,7 +72,7 @@ void TouchHandler::updateTouchInputState(TouchInputState& state, const TouchInpu
 	// all other gestures.
 	// With the introduction of hold, we have a new possibility: a hold can transition into a drag
 	// For now, we will consider that to remain a hold until the touch ends.
-	if (state.exceededTapSlop && !state.reachedHoldThreshold) {
+	if (state.exceededTapSlop) {
 		state.gesture = Drag;
 	}
 }
