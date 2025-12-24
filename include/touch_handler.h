@@ -31,9 +31,25 @@ enum GestureType {
 };
 
 
+struct PerContactDragData {
+	int deltaX;
+	int deltaY;
+};
+
+
 struct DragData {
 	int deltaX;
 	int deltaY;
+	float separation;
+	float deltaSeparation;
+};
+
+
+struct PerContactData {
+	uint32_t touchInputId;
+	int x;
+	int y;
+	std::variant<std::monostate, PerContactDragData> data;
 };
 
 
@@ -44,6 +60,8 @@ struct GestureEvent {
 	TouchPhase phase;
 	int x;
 	int y;
+	int contactCount;
+	PerContactData contacts[2]; // We don't support more than 2 contacts for now
 	std::variant<std::monostate, DragData> data;
 };
 
@@ -96,6 +114,7 @@ private:
 	constexpr static int TAP_SLOP = 8;
 	constexpr static int TAP_SLOP_PX = TAP_SLOP * DPI / 160;
 	constexpr static std::chrono::milliseconds HOLD_THRESHOLD = std::chrono::milliseconds(400);
+	constexpr static std::chrono::milliseconds MULTI_CONTACT_THRESHOLD = std::chrono::milliseconds(100);
 
 	TouchInputState* findStateById(uint32_t id);
 	TouchInputState* findFreeState();
