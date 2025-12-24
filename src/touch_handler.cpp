@@ -136,11 +136,20 @@ TouchHandler::GestureEventsResult TouchHandler::getGestureEvents() {
 			}
 		}
 
+		// Common for all gestures
 		result.events[result.count].touchInputId = state.touchId;
 		result.events[result.count].type = state.gesture;
 		result.events[result.count].phase = state.phase;
 		result.events[result.count].x = state.currentX;
 		result.events[result.count].y = state.currentY;
+		// We only support single contact for now
+		result.events[result.count].contactCount = 1;
+		// Populate per-contact data
+		result.events[result.count].contacts[0] = {
+			.x = state.currentX,
+			.y = state.currentY,
+		};
+
 
 		if (state.gesture == Drag) {
 			DragData dragData{
@@ -158,6 +167,12 @@ TouchHandler::GestureEventsResult TouchHandler::getGestureEvents() {
 			state.lastConsumedX = state.currentX;
 			state.lastConsumedY = state.currentY;
 
+			// Update the per-contact drag data as well
+			PerContactDragData perContactDragData{
+				.deltaX = dragData.deltaX,
+				.deltaY = dragData.deltaY,
+			};
+			result.events[result.count].contacts[0].data = perContactDragData;
 		}
 		else {
 			result.events[result.count].data = std::monostate{};
