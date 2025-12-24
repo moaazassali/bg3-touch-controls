@@ -1,7 +1,7 @@
 #include "touch_handler.h"
 
 
-TouchHandler::TouchInputState* TouchHandler::findStateById(uint32_t id) {
+TouchHandler::TouchInputState* TouchHandler::findStateById(int id) {
 	for (int i = 0; i < MAX_STATES; ++i) {
 		if (touchInputStates[i].touchId == id) {
 			return &touchInputStates[i];

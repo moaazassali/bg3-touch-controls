@@ -15,7 +15,7 @@ enum TouchPhase {
 
 // Common structure representing a touch input event from different platforms
 struct TouchInputEvent {
-	uint32_t id;
+	int id;
 	int x;
 	int y;
 	TouchPhase phase;
@@ -32,35 +32,35 @@ enum GestureType {
 
 
 struct PerContactDragData {
-	int deltaX;
-	int deltaY;
+	int deltaX = 0;
+	int deltaY = 0;
 };
 
 
 struct DragData {
-	int deltaX;
-	int deltaY;
-	float separation;
-	float deltaSeparation;
+	int deltaX = 0;
+	int deltaY = 0;
+	float separation = 0.0f;
+	float deltaSeparation = 0.0f;
 };
 
 
 struct PerContactData {
-	uint32_t touchInputId;
-	int x;
-	int y;
-	std::variant<std::monostate, PerContactDragData> data;
+	int touchInputId = -1;
+	int x = 0;
+	int y = 0;
+	std::variant<std::monostate, PerContactDragData> data = std::monostate{};
 };
 
 
 struct GestureEvent {
 	// Helpful for differentiating two ongoing gestures of the same type like two drags
-	uint32_t touchInputId;
-	GestureType type;
-	TouchPhase phase;
-	int x;
-	int y;
-	int contactCount;
+	int touchInputId = -1;
+	GestureType type = None;
+	TouchPhase phase = Start;
+	int x = 0;
+	int y = 0;
+	int contactCount = 0;
 	PerContactData contacts[2]; // We don't support more than 2 contacts for now
 	std::variant<std::monostate, DragData> data;
 };
@@ -83,7 +83,7 @@ private:
 	constexpr static int MAX_STATES = 3;
 
 	struct TouchInputState {
-		uint32_t touchId = 0;
+		int touchId = -1;
 		TouchPhase phase = Start;
 		GestureType gesture = None;
 		bool active = false;
@@ -116,7 +116,7 @@ private:
 	constexpr static std::chrono::milliseconds HOLD_THRESHOLD = std::chrono::milliseconds(400);
 	constexpr static std::chrono::milliseconds MULTI_CONTACT_THRESHOLD = std::chrono::milliseconds(100);
 
-	TouchInputState* findStateById(uint32_t id);
+	TouchInputState* findStateById(int id);
 	TouchInputState* findFreeState();
 	void updateTouchInputState(TouchInputState& state, const TouchInputEvent& input);
 

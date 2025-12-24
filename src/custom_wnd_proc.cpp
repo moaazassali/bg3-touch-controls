@@ -49,7 +49,7 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 			}
 
 			TouchHandler::getSingleton().addTouchInputEvent(TouchInputEvent{
-				.id = pointerId,
+				.id = (int)pointerId,
 				.x = pointerInfo.ptPixelLocation.x,
 				.y = pointerInfo.ptPixelLocation.y,
 				.phase = Start,
@@ -68,7 +68,7 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 			}
 
 			TouchHandler::getSingleton().addTouchInputEvent(TouchInputEvent{
-				.id = pointerId,
+				.id = (int)pointerId,
 				.x = pointerInfo.ptPixelLocation.x,
 				.y = pointerInfo.ptPixelLocation.y,
 				.phase = Update,
@@ -114,7 +114,7 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 			}
 
 			TouchHandler::getSingleton().addTouchInputEvent(TouchInputEvent{
-				.id = pointerId,
+				.id = (int)pointerId,
 				.x = pointerInfo.ptPixelLocation.x,
 				.y = pointerInfo.ptPixelLocation.y,
 				.phase = End,
