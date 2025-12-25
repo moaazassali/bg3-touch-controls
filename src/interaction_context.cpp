@@ -42,42 +42,6 @@ static const INTERACTION_CONTEXT_CONFIGURATION config[] = {
 	}
 };
 
-
-static void handleUIScroll(int x, int y, float deltaY) {
-	// invert for natural fell. make configurable.
-	constexpr float scrollFactor = 0.1f;
-	constexpr float scrollThreshold = 1.0f;
-
-	const float abs_deltaY = std::abs(deltaY);
-
-	if (abs_deltaY < scrollThreshold) {
-		return;
-	}
-
-	EnterCriticalSection((CRITICAL_SECTION*)reverse::g_inputManager);
-
-	auto seq = deltaY >= 0 ?
-		reverse::getSwipeDownSequence(abs_deltaY * scrollFactor) :
-		reverse::getSwipeUpSequence(abs_deltaY * scrollFactor);
-
-	reverse::populateActionPointers(seq);
-	reverse::pushSequenceToBuffer(seq, 0);
-	// We need to send an input event to force the game to process the action requests queue.
-	// We could technically force the processing of the action requests queue ourselves, but there is
-	// a bunch of logic around that in original_processInput that we would have to replicate which doesn't
-	// seem straightforward and it's too much effort to reverse engineer all that logic when we can just
-	// send a dummy input event to trigger the processing.
-	// 
-	// In this case though, we need to send a mouse motion event anyways because the location of the game's
-	// virtual cursor is important in determining whether a UI scroll should be processed.
-	// For instance, if the cursor is not over a scrollable UI element, the scroll action should be ignored.
-	sdl_bindings::moveCursor(x, y);
-	LeaveCriticalSection((CRITICAL_SECTION*)reverse::g_inputManager);
-}
-
-
-static bool manipulationStartedOverUI = false;
-
 static void CALLBACK interactionContextCallback(void* clientData, const INTERACTION_CONTEXT_OUTPUT2* output) {
 	HWND hwnd = reinterpret_cast<HWND>(clientData);
 
@@ -95,40 +59,6 @@ static void CALLBACK interactionContextCallback(void* clientData, const INTERACT
 	}
 	case INTERACTION_ID_MANIPULATION:
 	{
-		if (output->contactCount == 2) {
-			// We should also not do any camera movement when we are over UI here.
-			// But how do we determine that?
-			// Do we move cursor to midpoint of two contacts and check if we're over UI?
-			// Or do we check if either contact is over UI? If so, how do we do that? Do we move the cursor quickly
-			// to each contact and check the boolean?
-			// Will there be a timing issue here since the cursor position might be updated asynchronously but
-			// we can only check if we're over UI synchronously here?
-			// Maybe we should put a write breakpoint on the g_isCursorOverUI boolean and see how the game updates it.
-			// Two finger manipulation. Use for panning. Invert for natural feel. Make configurable. 
-			if (!*reverse::g_isCursorOverUI) {
-				constexpr float xPanFactor = -3.0f;
-				g_pendingCameraUpdates.xPanDelta.fetch_add(output->arguments.manipulation.delta.translationX * xPanFactor);
-				constexpr float yPanFactor = -3.0f;
-				g_pendingCameraUpdates.yPanDelta.fetch_add(output->arguments.manipulation.delta.translationY * yPanFactor);
-
-				// invert for natural feel. Make configurable.
-				constexpr float zoomFactor = -5.0f;
-				g_pendingCameraUpdates.zoomDelta.fetch_add(output->arguments.manipulation.delta.expansion * zoomFactor);
-			}
-			else {
-				// Uses the center of the two contacts. Might not be ideal but it's better than nothing.
-				// Let's lock the cursor to the position at the beginning of the interaction for better control.
-				// This way we don't end up moving the cursor outside the UI element we're trying to scroll and
-				// lose the scrolling interaction or cause other unwanted effects (like scrolling a different UI element
-				// or panning the camera if we move outside the UI).
-				static int initX, initY = 0;
-				if (output->interactionFlags & INTERACTION_FLAG_BEGIN) {
-					initX = clientPt.x;
-					initY = clientPt.y;
-				}
-				handleUIScroll(initX, initY, output->arguments.manipulation.delta.translationY);
-			}
-		}
 		break;
 	}
 	default:
