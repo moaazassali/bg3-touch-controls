@@ -3,12 +3,14 @@
 
 
 bool installProcessUnifiedInputEventHook(uintptr_t start, uintptr_t end);
+bool installProcessUnifiedInputQueueHook(uintptr_t start, uintptr_t end);
 
 
 bool installActionRequestsModule(uintptr_t start, uintptr_t end) {
 	printModuleInstallHeader("Action Requests");
 	bool success = true;
 	success &= installProcessUnifiedInputEventHook(start, end);
+	success &= installProcessUnifiedInputQueueHook(start, end);
 	printModuleInstallResult(success);
 	return success;
 }

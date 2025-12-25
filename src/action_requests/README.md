@@ -66,6 +66,16 @@ request queue. The next time `processUnifiedInputEvent` runs, it will process
 the queue with our action requests and figure out the correct action to
 perform.
 
+The first field in `ActionRequest` is a pointer to an `Action` which is a
+pointer to a struct that contains information about the action. This is
+obtained from a hash table that maps action IDs to `Action` structs. A pointer
+to this hash table can be found in a global singleton struct I call 
+`InputManager`, which is passed to both `processUnifiedInputQueue` and
+`processUnifiedInputEvent`. `processUnifiedInputEvent` doesn't get called with
+every frame, so we need to grab it from `processUnifiedInputQueue`. Then, we
+need to replicate the same lookup logic to get the `Action` pointer for each
+`ActionRequest` we want to push.
+
 However, some gestures like a two-finger swipe creates two action requests that
 both need to be processed: the X camera pan and the Y camera pan. So, for we
 will instead manually call `processUnifiedInputEvent` as well with a dummy F24

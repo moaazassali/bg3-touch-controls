@@ -22,7 +22,6 @@ add_library (BG3TouchControls SHARED
 	"src/Hooks/update_camera_hook.cpp"
 	"src/Hooks/calculate_pitch_hook.cpp"
 	"src/Hooks/update_camera_pitch_hook.cpp"
-	"src/Hooks/process_input_hook.cpp"
 	"src/reverse/action_map.cpp"
 	"src/game_bindings.cpp"
 	"src/sdl_bindings/sdl_create_window_hook.cpp"
@@ -50,6 +49,7 @@ add_library (BG3TouchControls SHARED
 	"src/world_interaction/modify_world_interaction_target_state.cpp"
 	"src/action_requests/module.cpp"
 	"src/action_requests/process_unified_input_event.cpp"
+	"src/action_requests/queue_action_requests.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")

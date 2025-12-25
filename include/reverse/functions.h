@@ -32,14 +32,6 @@ namespace reverse {
 	using moveCharacter_t = void* (*)(void* a1, void* a2, void* a3);
 	constexpr const char* pattern_moveCharacter = "E8 ?? ?? ?? ?? F3 0F 10 55 ?? F3 0F 10 45 ?? F3 0F 10 4D ?? F3 0F 10 35";
 
-
-	// This is called every frame to handle input
-	// a1 is a pretty big "InputManager" struct, which holds a lot of states, queues, etc...
-	// It process the input events and dispatches a set of predefined actions
-	// These actions can be mined from the game exe as they are associated with string literals
-	using processInput_t = void(*)(InputManager* a1, uint64_t a2);
-	constexpr const uintptr_t offset_processInput = 0x40C2CC0;
-
 	// This function retrieves the raw action buffer that holds all actions that are mapped to the
 	// input provided by the player.
 	// So the actions in this buffer are all unfiltered and unprocessed.
