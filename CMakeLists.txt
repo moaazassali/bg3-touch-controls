@@ -48,6 +48,8 @@ add_library (BG3TouchControls SHARED
 	"src/move_internal_cursor/update_cursor_over_ui_flag.cpp"
 	"src/world_interaction/module.cpp"
 	"src/world_interaction/modify_world_interaction_target_state.cpp"
+	"src/action_requests/module.cpp"
+	"src/action_requests/process_unified_input_event.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
