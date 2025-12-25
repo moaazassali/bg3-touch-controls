@@ -19,7 +19,6 @@ add_library (BG3TouchControls SHARED
 	"src/dllmain.cpp"
 	"src/setup_thread.cpp"
 	"src/custom_wnd_proc.cpp"
-	"src/interaction_context.cpp"
 	"src/Hooks/update_camera_hook.cpp"
 	"src/Hooks/calculate_pitch_hook.cpp"
 	"src/Hooks/update_camera_pitch_hook.cpp"
@@ -53,10 +52,6 @@ add_library (BG3TouchControls SHARED
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
-
-# Neded for Interaction Context
-# See Requirements section in https://learn.microsoft.com/en-us/windows/win32/api/interactioncontext/nf-interactioncontext-createinteractioncontext
-target_link_libraries(BG3TouchControls PRIVATE ninput)
 
 # Add MinHook using FetchContent
 include(FetchContent)

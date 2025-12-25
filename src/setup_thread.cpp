@@ -3,7 +3,6 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
-#include <InteractionContext.h>
 
 #include "sdl_bindings/sdl_bindings.h"
 #include "game_bindings.h"
@@ -13,7 +12,6 @@ LRESULT CALLBACK customWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 void initializeInteractionContext(HWND hwnd);
 
 WNDPROC g_originalWndProc = nullptr; // Store original window procedure
-HINTERACTIONCONTEXT g_hInteractionContext;
 HWND g_gameHwnd = nullptr;
 
 static void createConsole()
@@ -84,7 +82,6 @@ DWORD WINAPI setupThread(LPVOID lpParam)
 	sdl_bindings::bindToSDL();
 	g_gameHwnd = findMainWindowForCurrentProcess();
 	subclassGameWindow(g_gameHwnd);
-	initializeInteractionContext(g_gameHwnd);
 	bindToGame();
 
 	std::cout << "\n--- Press any key to close. ---" << std::endl;

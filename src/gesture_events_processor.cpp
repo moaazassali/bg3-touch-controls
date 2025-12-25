@@ -13,6 +13,7 @@
 
 
 extern HWND g_gameHwnd;
+PendingCameraUpdates g_pendingCameraUpdates;
 
 
 static void processTap(const GestureEvent& event, POINT clientPt) {
