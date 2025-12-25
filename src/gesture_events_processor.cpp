@@ -236,7 +236,7 @@ static void processOneContactDrag(const GestureEvent& event, POINT clientPt) {
 }
 
 
-static void handleUIScroll(int x, int y, float deltaY) {
+static void handleUIScroll(float deltaY) {
 	// invert for natural fell. make configurable.
 	constexpr float scrollFactor = 0.1f;
 	constexpr float scrollThreshold = 1.0f;
@@ -247,27 +247,18 @@ static void handleUIScroll(int x, int y, float deltaY) {
 		return;
 	}
 
-	EnterCriticalSection((CRITICAL_SECTION*)reverse::g_inputManager);
-
 	auto seq = deltaY >= 0 ?
 		reverse::getSwipeDownSequence(abs_deltaY * scrollFactor) :
 		reverse::getSwipeUpSequence(abs_deltaY * scrollFactor);
 
 	reverse::populateActionPointers(seq);
 	reverse::pushSequenceToBuffer(seq, 0);
-	// We need to send an input event to force the game to process the action requests queue.
-	// We could technically force the processing of the action requests queue ourselves, but there is
-	// a bunch of logic around that in original_processInput that we would have to replicate which doesn't
-	// seem straightforward and it's too much effort to reverse engineer all that logic when we can just
-	// send a dummy input event to trigger the processing.
-	// 
-	// In this case though, we need to send a mouse motion event anyways because the location of the game's
-	// virtual cursor is important in determining whether a UI scroll should be processed.
-	// For instance, if the cursor is not over a scrollable UI element, the scroll action should be ignored.
-	sdl_bindings::moveCursor(x, y);
-	LeaveCriticalSection((CRITICAL_SECTION*)reverse::g_inputManager);
+
+	sdl_bindings::sendDummyF24KeyUp();
 }
 
+
+static bool twoContactDragStartedOverUI = false;
 
 static void processTwoContactDrag(const GestureEvent& event, POINT clientPt) {
 	// We should also not do any camera movement when we are over UI here.
@@ -281,7 +272,29 @@ static void processTwoContactDrag(const GestureEvent& event, POINT clientPt) {
 	// Two finger manipulation. Use for panning. Invert for natural feel. Make configurable. 
 	auto& dragData = std::get<DragData>(event.data);
 
-	if (!*reverse::g_isCursorOverUI) {
+	// See comment in processOneContactDrag
+	clearActiveWorldEntityInteractions();
+	freezeProcessingWorldEntityInteractions();
+
+	if (event.phase == Start) {
+		// Only if both contacts started over UI then we consider the two-contact drag to be over UI
+		POINT clientPt1 = { event.contacts[0].x, event.contacts[0].y };
+		ScreenToClient(g_gameHwnd, &clientPt1);
+		moveInternalCursor((float)clientPt1.x, (float)clientPt1.y);
+		bool firstOverUI = isCursorOverUI();
+
+		POINT clientPt2 = { event.contacts[1].x, event.contacts[1].y };
+		ScreenToClient(g_gameHwnd, &clientPt2);
+		moveInternalCursor((float)clientPt2.x, (float)clientPt2.y);
+		bool secondOverUI = isCursorOverUI();
+
+		twoContactDragStartedOverUI = firstOverUI && secondOverUI;
+	}
+
+	if (twoContactDragStartedOverUI) {
+		handleUIScroll(dragData.deltaY);
+	}
+	else {
 		constexpr float xPanFactor = -3.0f;
 		g_pendingCameraUpdates.xPanDelta.fetch_add(dragData.deltaX * xPanFactor);
 		constexpr float yPanFactor = -3.0f;
@@ -290,19 +303,6 @@ static void processTwoContactDrag(const GestureEvent& event, POINT clientPt) {
 		// invert for natural feel. Make configurable.
 		constexpr float zoomFactor = -5.0f;
 		g_pendingCameraUpdates.zoomDelta.fetch_add(dragData.deltaSeparation * zoomFactor);
-	}
-	else {
-		// Uses the center of the two contacts. Might not be ideal but it's better than nothing.
-		// Let's lock the cursor to the position at the beginning of the interaction for better control.
-		// This way we don't end up moving the cursor outside the UI element we're trying to scroll and
-		// lose the scrolling interaction or cause other unwanted effects (like scrolling a different UI element
-		// or panning the camera if we move outside the UI).
-		static int initX, initY = 0;
-		if (event.phase == Start) {
-			initX = clientPt.x;
-			initY = clientPt.y;
-		}
-		handleUIScroll(initX, initY, dragData.deltaY);
 	}
 }
 
