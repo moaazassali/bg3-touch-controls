@@ -156,8 +156,8 @@ static void handlePitchUpdate(int deltaY, TouchPhase phase) {
 
 static bool dragStartedOverUI = false;
 // We need to know which drag event is for joystick/camera
-static uint32_t joystickTouchInputId = 0;
-static uint32_t cameraTouchInputId = 0;
+static int joystickTouchInputId = -1;
+static int cameraTouchInputId = -1;
 
 static void processOneContactDrag(const GestureEvent& event, POINT clientPt) {
 	// We need to differentiate between drags done over UI or over the game world.
@@ -185,7 +185,7 @@ static void processOneContactDrag(const GestureEvent& event, POINT clientPt) {
 		else {
 			// Joystick activation area is left half of the screen
 			auto windowSize = getWindowSizePx(g_gameHwnd);
-			if (clientPt.x < windowSize.cx / 2 && g_gameWorldLoaded) {
+			if (clientPt.x < windowSize.cx / 2 && g_gameWorldLoaded && joystickTouchInputId == -1) {
 				activateJoystick((float)startX, (float)startY);
 				joystickTouchInputId = event.touchInputId;
 				// Send right click to disable force stop any active click-to-move character movement
@@ -195,7 +195,7 @@ static void processOneContactDrag(const GestureEvent& event, POINT clientPt) {
 				sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
 			}
 			else {
-				cameraTouchInputId = event.touchInputId;
+				cameraTouchInputId = cameraTouchInputId == -1 ? event.touchInputId : cameraTouchInputId;
 			}
 		}
 	}
@@ -222,10 +222,10 @@ static void processOneContactDrag(const GestureEvent& event, POINT clientPt) {
 	if (event.phase == End) {
 		if (event.touchInputId == joystickTouchInputId) {
 			releaseJoystick();
-			joystickTouchInputId = 0;
+			joystickTouchInputId = -1;
 		}
 		if (event.touchInputId == cameraTouchInputId) {
-			cameraTouchInputId = 0;
+			cameraTouchInputId = -1;
 		}
 		if (dragStartedOverUI) {
 			sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
