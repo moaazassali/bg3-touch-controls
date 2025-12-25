@@ -17,7 +17,6 @@ bool installUpdateCameraHook(uintptr_t start, uintptr_t end);
 bool installCalculatePitchHook(uintptr_t start, uintptr_t end);
 bool installUpdateCameraPitchHook(uintptr_t start, uintptr_t end);
 bool installProcessInputHook(uintptr_t start, uintptr_t end);
-bool installUnkConsumesFilteredActionsQueueHook(uintptr_t start, uintptr_t end);
 bool installPushToActionRequestsQueueHook(uintptr_t start, uintptr_t end);
 bool installFilterPreFinalActionsQueueHook(uintptr_t start, uintptr_t end);
 bool installMoveCharacterHook(uintptr_t start, uintptr_t end);
@@ -40,7 +39,6 @@ extern reverse::filterPreFinalActionsQueue_t original_filterPreFinalActionsQueue
 
 namespace reverse {
 	extern InputManager* g_inputManager;
-	extern bool* g_isCursorOverUI;
 }
 
 extern bool g_gameWorldLoaded;
