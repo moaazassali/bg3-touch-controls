@@ -4,56 +4,7 @@
 #include "reverse/functions.h"
 #include "reverse/action_request.h"
 #include "game_bindings.h"
-
-
-static uint64_t counter = 0;
-
-
-static void printActionRequestDetails(reverse::ActionRequest* a2) {
-	if (a2 && a2->action) {
-		std::string actionName;
-		if (a2->action->name && a2->action->nameLen > 0) {
-			actionName.assign(a2->action->name, static_cast<size_t>(a2->action->nameLen));
-		}
-		std::cout
-			<< (actionName.empty() ? "null" : actionName)
-			<< ", ID: " << a2->actionId
-			<< ", Device: " << a2->deviceId
-			<< ", State: " << static_cast<int>(a2->actionState)
-			<< ", Scaled: " << a2->currentPressValue
-			<< ", Raw: " << a2->currentRawValue
-			<< ", Pressed: " << static_cast<int>(a2->currentIsPressed)
-			<< ", Prev press: " << a2->prevPressValue
-			<< ", Prev raw: " << a2->prevRawValue
-			<< ", Prev pressed: " << static_cast<int>(a2->prevIsPressed)
-			<< ", DeviceDup: " << a2->deviceId_dup1
-			<< ", InputId: " << a2->inputId
-			<< ", PlayerIdx: " << static_cast<int>(a2->playerIndex)
-			<< ", PlayerIdxDup: " << static_cast<int>(a2->playerIndex_dup1)
-			<< std::endl;
-	}
-}
-
-
-//reverse::ActionRequest* detour_pushToActionRequestsQueue(void* a1, reverse::ActionRequest* a2)
-//{
-//	// print action request details for debugging
-//	if (a2 && a2->action) {
-//		std::string actionName;
-//		if (a2->action->name && a2->action->nameLen > 0) {
-//			actionName.assign(a2->action->name, static_cast<size_t>(a2->action->nameLen));
-//		}
-//
-//		if (a2->actionId != -1) {
-//			std::cout << counter << " - ";
-//			printActionRequestDetails(a2);
-//		}
-//
-//		counter++;
-//	}
-//
-//	return original_pushToActionRequestsQueue(a1, a2);
-//}
+#include "utils.h"
 
 
 void* detour_filterPreFinalActionsQueue(void* a1, void* a2, void* a3) {

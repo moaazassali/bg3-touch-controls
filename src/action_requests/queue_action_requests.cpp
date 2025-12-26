@@ -1,6 +1,9 @@
+#include <iostream>
+
 #include "game_bindings.h"
 #include "reverse/input_manager.h"
 #include "action_requests.h"
+#include "utils.h"
 
 
 using processUnifiedInputQueue = void(*)(reverse::InputManager* a1, uint64_t a2);
@@ -39,16 +42,45 @@ bool installProcessUnifiedInputQueueHook(uintptr_t start, uintptr_t end)
 using pushToActionRequestQueue_t = reverse::ActionRequest* (*)(void* a1, reverse::ActionRequest* a2);
 pushToActionRequestQueue_t original_pushToActionRequestQueue = nullptr;
 
+static bool enableDebugPushToActionRequestQueue = false;
+
 
 static reverse::ActionRequest* detour_pushToActionRequestQueue(void* a1, reverse::ActionRequest* a2)
 {
+	if (enableDebugPushToActionRequestQueue) {
+		static uint64_t counter = 0;
+
+		if (a2 && a2->action) {
+			std::string actionName;
+			if (a2->action->name && a2->action->nameLen > 0) {
+				actionName.assign(a2->action->name, static_cast<size_t>(a2->action->nameLen));
+			}
+
+			if (a2->actionId != -1) {
+				std::cout << counter << " - ";
+				printActionRequestDetails(a2);
+			}
+
+			counter++;
+		}
+	}
 	return original_pushToActionRequestQueue(a1, a2);
 }
 
 
-bool installPushToActionRequestQueueHook(uintptr_t start, uintptr_t end)
+bool installPushToActionRequestQueueHook(uintptr_t start, uintptr_t end, bool enableDebug)
 {
 	constexpr const char* pattern_pushToActionRequestQueue = "48 89 5C 24 08 57 48 83 EC 20 48 8B D9 48 8B FA 8B 49 08 8B 43 0C 3B C8 7F 16 FF C0 8D 14 09 3B D0 0F 4C D0 3B CA 7D 08 48 8B CB E8 ?? ?? ?? ?? 48 63 4B 0C 8D 41 01 89 43 0C 48 8B";
 	uintptr_t matchAddr = findPattern(pattern_pushToActionRequestQueue, start, end);
-	return installHook((void*)matchAddr, &detour_pushToActionRequestQueue, (void**)&original_pushToActionRequestQueue, "pushToActionRequestQueueHook");
+	if (!matchAddr) {
+		printPatternNotFoundError(pattern_pushToActionRequestQueue, "pushToActionRequestQueue");
+		return false;
+	}
+	if (enableDebug) {
+		enableDebugPushToActionRequestQueue = enableDebug;
+		return installHook((void*)matchAddr, &detour_pushToActionRequestQueue, (void**)&original_pushToActionRequestQueue, "pushToActionRequestQueueHook");
+	}
+	// We only need a reference to the original function if debugging is disabled
+	original_pushToActionRequestQueue = (pushToActionRequestQueue_t)matchAddr;
+	return true;
 }

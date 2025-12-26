@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "utils.h"
+#include "reverse/action_request.h"
 
 
 // We could use a separate timer thread with precise timings if needed
@@ -94,12 +95,40 @@ void printModuleInstallResult(bool success)
 	}
 }
 
+
 void printPatternNotFoundError(const char* pattern, const char* patternName)
 {
 	std::cout << "Failed to find pattern " << pattern << " for " << patternName << "." << std::endl;
 }
 
+
 void printPatternFoundMessage(uintptr_t address, const char* patternName)
 {
 	std::cout << "Found pattern for " << patternName << " at address: 0x" << std::hex << address << std::dec << std::endl;
+}
+
+
+void printActionRequestDetails(reverse::ActionRequest* a2) {
+	if (a2 && a2->action) {
+		std::string actionName;
+		if (a2->action->name && a2->action->nameLen > 0) {
+			actionName.assign(a2->action->name, static_cast<size_t>(a2->action->nameLen));
+		}
+		std::cout
+			<< (actionName.empty() ? "null" : actionName)
+			<< ", ID: " << a2->actionId
+			<< ", Device: " << a2->deviceId
+			<< ", State: " << static_cast<int>(a2->actionState)
+			<< ", Scaled: " << a2->currentPressValue
+			<< ", Raw: " << a2->currentRawValue
+			<< ", Pressed: " << static_cast<int>(a2->currentIsPressed)
+			<< ", Prev press: " << a2->prevPressValue
+			<< ", Prev raw: " << a2->prevRawValue
+			<< ", Prev pressed: " << static_cast<int>(a2->prevIsPressed)
+			<< ", DeviceDup: " << a2->deviceId_dup1
+			<< ", InputId: " << a2->inputId
+			<< ", PlayerIdx: " << static_cast<int>(a2->playerIndex)
+			<< ", PlayerIdxDup: " << static_cast<int>(a2->playerIndex_dup1)
+			<< std::endl;
+	}
 }

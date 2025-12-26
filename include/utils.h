@@ -3,6 +3,8 @@
 #include <chrono>
 #include <wtypes.h>
 
+#include "reverse/action_request.h"
+
 
 void scheduleTask(std::function<void()> task, std::chrono::milliseconds delay);
 
@@ -15,3 +17,5 @@ void printModuleInstallResult(bool success);
 void printPatternNotFoundError(const char* pattern, const char* patternName);
 
 void printPatternFoundMessage(uintptr_t address, const char* patternName);
+
+void printActionRequestDetails(reverse::ActionRequest* a2);

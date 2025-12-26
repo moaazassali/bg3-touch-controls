@@ -149,7 +149,7 @@ static void installHooks(uintptr_t start, uintptr_t end)
 
 	success &= installMoveInternalCursorModule(start, end);
 	success &= installWorldInteractionModule(start, end);
-	success &= installActionRequestsModule(start, end);
+	success &= installActionRequestsModule(start, end, false);
 
 	if (success) {
 		std::cout << "All hooks installed successfully." << std::endl;

@@ -4,7 +4,7 @@
 #include "reverse/action_request.h"
 
 
-bool installActionRequestsModule(uintptr_t start, uintptr_t end);
+bool installActionRequestsModule(uintptr_t start, uintptr_t end, bool enableDebug);
 
 void triggerActionRequestQueueProcessing();
 
