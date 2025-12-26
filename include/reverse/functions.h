@@ -45,11 +45,6 @@ namespace reverse {
 	using getActionRequestsBuffer_t = void* (*)(void* a1, uint8_t* a2);
 	constexpr const uintptr_t offset_getActionRequestsBuffer = 0x40C79E0;
 
-	// This takes a queue from the action requests buffer retrieved via getActionRequestsBuffer
-	// and pushes a new action request to it.
-	using pushToActionRequestsQueue_t = ActionRequest * (*)(void* a1, ActionRequest* a2);
-	constexpr const uintptr_t offset_pushToActionRequestsQueue = 0x121C460;
-
 	// This takes a queue range from the action requests buffer retrieved via getActionRequestsBuffer
 	// and processes all action requests in it.
 	// It does some filtering based on the current game state (like whether the UI is open or not)

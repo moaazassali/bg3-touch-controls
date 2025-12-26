@@ -4,6 +4,7 @@
 
 bool installProcessUnifiedInputEventHook(uintptr_t start, uintptr_t end);
 bool installProcessUnifiedInputQueueHook(uintptr_t start, uintptr_t end);
+bool installPushToActionRequestQueueHook(uintptr_t start, uintptr_t end);
 
 
 bool installActionRequestsModule(uintptr_t start, uintptr_t end) {
@@ -11,6 +12,7 @@ bool installActionRequestsModule(uintptr_t start, uintptr_t end) {
 	bool success = true;
 	success &= installProcessUnifiedInputEventHook(start, end);
 	success &= installProcessUnifiedInputQueueHook(start, end);
+	success &= installPushToActionRequestQueueHook(start, end);
 	printModuleInstallResult(success);
 	return success;
 }

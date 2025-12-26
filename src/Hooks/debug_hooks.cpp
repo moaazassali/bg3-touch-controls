@@ -35,25 +35,25 @@ static void printActionRequestDetails(reverse::ActionRequest* a2) {
 }
 
 
-reverse::ActionRequest* detour_pushToActionRequestsQueue(void* a1, reverse::ActionRequest* a2)
-{
-	// print action request details for debugging
-	if (a2 && a2->action) {
-		std::string actionName;
-		if (a2->action->name && a2->action->nameLen > 0) {
-			actionName.assign(a2->action->name, static_cast<size_t>(a2->action->nameLen));
-		}
-
-		if (a2->actionId != -1) {
-			std::cout << counter << " - ";
-			printActionRequestDetails(a2);
-		}
-
-		counter++;
-	}
-
-	return original_pushToActionRequestsQueue(a1, a2);
-}
+//reverse::ActionRequest* detour_pushToActionRequestsQueue(void* a1, reverse::ActionRequest* a2)
+//{
+//	// print action request details for debugging
+//	if (a2 && a2->action) {
+//		std::string actionName;
+//		if (a2->action->name && a2->action->nameLen > 0) {
+//			actionName.assign(a2->action->name, static_cast<size_t>(a2->action->nameLen));
+//		}
+//
+//		if (a2->actionId != -1) {
+//			std::cout << counter << " - ";
+//			printActionRequestDetails(a2);
+//		}
+//
+//		counter++;
+//	}
+//
+//	return original_pushToActionRequestsQueue(a1, a2);
+//}
 
 
 void* detour_filterPreFinalActionsQueue(void* a1, void* a2, void* a3) {
@@ -81,15 +81,6 @@ void* detour_filterPreFinalActionsQueue(void* a1, void* a2, void* a3) {
 	}
 
 	return original_filterPreFinalActionsQueue(a1, a2, a3);
-}
-
-bool installPushToActionRequestsQueueHook(uintptr_t start, uintptr_t end)
-{
-	uintptr_t address = start + reverse::offset_pushToActionRequestsQueue;
-	if (!installHook((LPVOID)address, (LPVOID)detour_pushToActionRequestsQueue, (LPVOID*)&original_pushToActionRequestsQueue, "pushToActionRequestsQueue")) {
-		return false;
-	}
-	return true;
 }
 
 

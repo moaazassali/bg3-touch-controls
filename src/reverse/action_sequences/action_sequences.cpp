@@ -1,6 +1,7 @@
 #include "reverse/action_sequences/action_sequences.h"
 #include "reverse/input_manager.h"
 #include "reverse/action_map.h"
+#include "action_requests.h"
 
 
 namespace reverse {
@@ -22,13 +23,13 @@ namespace reverse {
 
 		for (ActionRequest& req : seq) {
 			if (req.actionState == 1) {
-				original_pushToActionRequestsQueue(q1, &req);
+				original_pushToActionRequestQueue(q1, &req);
 			}
 			else if (req.actionState == 2) {
-				original_pushToActionRequestsQueue(q2, &req);
+				original_pushToActionRequestQueue(q2, &req);
 			}
 			else if (req.actionState == 4) {
-				original_pushToActionRequestsQueue(q3, &req);
+				original_pushToActionRequestQueue(q3, &req);
 			}
 		}
 		LeaveCriticalSection((CRITICAL_SECTION*)reverse::g_inputManager);

@@ -16,7 +16,6 @@ bool installHook(LPVOID pTarget, LPVOID pDetour, LPVOID* ppOriginal, const char*
 bool installUpdateCameraHook(uintptr_t start, uintptr_t end);
 bool installCalculatePitchHook(uintptr_t start, uintptr_t end);
 bool installUpdateCameraPitchHook(uintptr_t start, uintptr_t end);
-bool installPushToActionRequestsQueueHook(uintptr_t start, uintptr_t end);
 bool installFilterPreFinalActionsQueueHook(uintptr_t start, uintptr_t end);
 bool installMoveCharacterHook(uintptr_t start, uintptr_t end);
 
@@ -31,7 +30,6 @@ bool installDX11PresentHook();
 
 
 extern reverse::getActionRequestsBuffer_t original_getActionRequestsBuffer;
-extern reverse::pushToActionRequestsQueue_t original_pushToActionRequestsQueue;
 extern reverse::processActionRequestsQueue_t original_processActionRequestsQueue;
 extern reverse::filterPreFinalActionsQueue_t original_filterPreFinalActionsQueue;
 
