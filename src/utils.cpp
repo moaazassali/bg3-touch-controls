@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include "utils.h"
-#include "reverse/action_request.h"
 
 
 // We could use a separate timer thread with precise timings if needed
@@ -108,7 +107,7 @@ void printPatternFoundMessage(uintptr_t address, const char* patternName)
 }
 
 
-void printActionRequestDetails(reverse::ActionRequest* a2) {
+void printActionRequestDetails(ActionRequest* a2) {
 	if (a2 && a2->action) {
 		std::string actionName;
 		if (a2->action->name && a2->action->nameLen > 0) {

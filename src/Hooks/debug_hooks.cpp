@@ -2,7 +2,7 @@
 #include <chrono>
 
 #include "reverse/functions.h"
-#include "reverse/action_request.h"
+#include "action_requests.h"
 #include "game_bindings.h"
 #include "utils.h"
 
@@ -20,7 +20,7 @@ void* detour_filterPreFinalActionsQueue(void* a1, void* a2, void* a3) {
 	uintptr_t curr = queueStart;
 
 	for (int i = 0; i < count; ++i) {
-		reverse::ActionRequest* req = (reverse::ActionRequest*)curr;
+		ActionRequest* req = (ActionRequest*)curr;
 
 		if (req && req->action && req->actionId != -1) {
 			std::cout << "F#" << i << " - ";

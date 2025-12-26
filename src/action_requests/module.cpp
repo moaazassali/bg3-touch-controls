@@ -1,3 +1,5 @@
+#include <span>
+
 #include "action_requests.h"
 #include "utils.h"
 
@@ -21,9 +23,14 @@ bool installActionRequestsModule(uintptr_t start, uintptr_t end, bool enableDebu
 
 
 void createAndProcessDummyF24KeyUnifiedInputEvent();
+void populateActionPointers(std::span<ActionRequest> seq);
+void pushActionRequestsToQueue(std::span<ActionRequest> seq, uint8_t playerIndex);
 
 
-void triggerActionRequestQueueProcessing() {
+void processActionRequests(std::span<ActionRequest> seq) {
+	// First populate the null action pointers
+	populateActionPointers(seq);
+	pushActionRequestsToQueue(seq, 0);
 	// We need to trigger the function that processes a unified input event
 	// so that it calls the action request queue processing code.
 	createAndProcessDummyF24KeyUnifiedInputEvent();

@@ -10,6 +10,7 @@
 #include "pending_camera_updates.h"
 #include "move_internal_cursor.h"
 #include "world_interaction.h"
+#include "action_requests.h"
 
 
 extern HWND g_gameHwnd;
@@ -66,33 +67,25 @@ static void handleCameraRotation(int deltaX, TouchPhase phase) {
 
 	if (phase == Start) {
 		auto seq3 = reverse::getWorldSwipeToggleSequence(true);
-		reverse::populateActionPointers(seq3);
-		reverse::pushSequenceToBuffer(seq3, 0);
+		processActionRequests(seq3);
 	}
 	else if (phase == End) {
 		auto seq1 = reverse::getWorldSwipeToggleSequence(false);
-		reverse::populateActionPointers(seq1);
-		reverse::pushSequenceToBuffer(seq1, 0);
+		processActionRequests(seq1);
 		// Send zero-strength releases to stop any ongoing swipe actions in case last
 		// gesture event had a non-zero deltaX.
 		auto seq2 = reverse::getWorldSwipeRightSequence(0.0f, 0.0f, false);
-		reverse::populateActionPointers(seq2);
-		reverse::pushSequenceToBuffer(seq2, 0);
+		processActionRequests(seq2);
 		auto seq3 = reverse::getWorldSwipeLeftSequence(0.0f, 0.0f, false);
-		reverse::populateActionPointers(seq3);
-		reverse::pushSequenceToBuffer(seq3, 0);
+		processActionRequests(seq3);
 	}
 	else {
 		auto seq = isSwipingRight ?
 			reverse::getWorldSwipeRightSequence(strength, deltaX, false) :
 			reverse::getWorldSwipeLeftSequence(strength, deltaX, false);
-		reverse::populateActionPointers(seq);
-		reverse::pushSequenceToBuffer(seq, 0);
-	}
+		processActionRequests(seq);
 
-	// Send a hardware event to ensure the game processes the action requests queue.
-	// This happens in processInput; we need it to ensure it doesn't return early.
-	sdl_bindings::sendDummyF24KeyUp();
+	}
 }
 
 
@@ -251,10 +244,7 @@ static void handleUIScroll(float deltaY) {
 		reverse::getSwipeDownSequence(abs_deltaY * scrollFactor) :
 		reverse::getSwipeUpSequence(abs_deltaY * scrollFactor);
 
-	reverse::populateActionPointers(seq);
-	reverse::pushSequenceToBuffer(seq, 0);
-
-	sdl_bindings::sendDummyF24KeyUp();
+	processActionRequests(seq);
 }
 
 

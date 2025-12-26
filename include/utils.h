@@ -3,7 +3,7 @@
 #include <chrono>
 #include <wtypes.h>
 
-#include "reverse/action_request.h"
+#include "action_requests.h"
 
 
 void scheduleTask(std::function<void()> task, std::chrono::milliseconds delay);
@@ -18,4 +18,4 @@ void printPatternNotFoundError(const char* pattern, const char* patternName);
 
 void printPatternFoundMessage(uintptr_t address, const char* patternName);
 
-void printActionRequestDetails(reverse::ActionRequest* a2);
+void printActionRequestDetails(ActionRequest* a2);

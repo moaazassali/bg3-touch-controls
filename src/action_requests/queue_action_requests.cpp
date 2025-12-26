@@ -1,17 +1,33 @@
 #include <iostream>
+#include <span>
 
 #include "game_bindings.h"
-#include "reverse/input_manager.h"
 #include "action_requests.h"
 #include "utils.h"
 
 
-using processUnifiedInputQueue = void(*)(reverse::InputManager* a1, uint64_t a2);
-processUnifiedInputQueue original_processUnifiedInputQueue = nullptr;
+// Action map node retrieved from the action map
+struct ActionMapNode {
+	ActionMapNode* next;
+	uint32_t key;
+	std::byte _pad_008[4];
+	Action action;
+};
 
-namespace reverse {
-	InputManager* g_inputManager = nullptr;
-}
+struct InputManager {
+	std::byte _pad_000[0x40];
+	std::byte actionBufferManagerStuctStart;
+	std::byte _pad_041[0x7F];
+	uint32_t actionMapCount;
+	uint32_t actionMapSize;
+	ActionMapNode** actionMap;
+	std::byte _pad_0D0[0x520];
+	// More is known but not needed for now. Will add+document later.
+};
+
+using processUnifiedInputQueue = void(*)(InputManager* a1, uint64_t a2);
+processUnifiedInputQueue original_processUnifiedInputQueue = nullptr;
+InputManager* processUnifiedInputQueue_a1 = nullptr;
 
 
 // This is called every frame to handle input
@@ -20,10 +36,10 @@ namespace reverse {
 // another function? processUnifiedInputEvent is called by processUnifiedInputQueue only when needed,
 // so our input manager pointer will be null initially unless we make sure to send some "initial" input
 // before doing anything relies on input manager.
-static void detour_processUnifiedInputQueue(reverse::InputManager* a1, uint64_t a2)
+static void detour_processUnifiedInputQueue(InputManager* a1, uint64_t a2)
 {
-	if (!reverse::g_inputManager) {
-		reverse::g_inputManager = a1;
+	if (a1) {
+		processUnifiedInputQueue_a1 = reinterpret_cast<InputManager*>(a1);
 	}
 	original_processUnifiedInputQueue(a1, a2);
 }
@@ -39,13 +55,13 @@ bool installProcessUnifiedInputQueueHook(uintptr_t start, uintptr_t end)
 
 // This takes a queue from the action requests queues list retrieved via getActionRequestQueuesList
 // and pushes a new action request to it.
-using pushToActionRequestQueue_t = reverse::ActionRequest* (*)(void* a1, reverse::ActionRequest* a2);
+using pushToActionRequestQueue_t = ActionRequest* (*)(void* a1, ActionRequest* a2);
 pushToActionRequestQueue_t original_pushToActionRequestQueue = nullptr;
 
 static bool enableDebugPushToActionRequestQueue = false;
 
 
-static reverse::ActionRequest* detour_pushToActionRequestQueue(void* a1, reverse::ActionRequest* a2)
+static ActionRequest* detour_pushToActionRequestQueue(void* a1, ActionRequest* a2)
 {
 	if (enableDebugPushToActionRequestQueue) {
 		static uint64_t counter = 0;
@@ -105,4 +121,55 @@ bool installGetActionRequestsQueuesListHook(uintptr_t start, uintptr_t end)
 	}
 	original_getActionRequestsQueuesList = (getActionRequestsQueuesList_t)matchAddr;
 	return true;
+}
+
+
+static Action* getActionById(ActionMapNode** actionMap, uint32_t actionMapSize, uint32_t actionId) {
+	if (!actionMap || actionMapSize <= 0) {
+		return nullptr;
+	}
+
+	size_t bucketIndex = actionId % actionMapSize;
+	ActionMapNode* currentNode = actionMap[bucketIndex];
+
+	// handle collisions using linked list traversal
+	while (currentNode) {
+		if (currentNode->action.actionId == actionId) {
+			return &currentNode->action;
+		}
+		currentNode = currentNode->next;
+	}
+
+	return nullptr;
+}
+
+
+void populateActionPointers(std::span<ActionRequest> seq) {
+	EnterCriticalSection((CRITICAL_SECTION*)processUnifiedInputQueue_a1);
+	for (ActionRequest& req : seq) {
+		req.action = getActionById(processUnifiedInputQueue_a1->actionMap, processUnifiedInputQueue_a1->actionMapSize, req.actionId);
+	}
+	LeaveCriticalSection((CRITICAL_SECTION*)processUnifiedInputQueue_a1);
+}
+
+
+void pushActionRequestsToQueue(std::span<ActionRequest> seq, uint8_t playerIndex) {
+	EnterCriticalSection((CRITICAL_SECTION*)processUnifiedInputQueue_a1);
+	void* actionRequestsBuffer = original_getActionRequestsQueuesList(reinterpret_cast<void*>(&processUnifiedInputQueue_a1->actionBufferManagerStuctStart), &playerIndex);
+	auto q1 = actionRequestsBuffer;
+	auto q2 = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(actionRequestsBuffer) + 0x10);
+	auto q3 = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(actionRequestsBuffer) + 0x20);
+
+	for (ActionRequest& req : seq) {
+		if (req.actionState == 1) {
+			original_pushToActionRequestQueue(q1, &req);
+		}
+		else if (req.actionState == 2) {
+			original_pushToActionRequestQueue(q2, &req);
+		}
+		else if (req.actionState == 4) {
+			original_pushToActionRequestQueue(q3, &req);
+		}
+	}
+	LeaveCriticalSection((CRITICAL_SECTION*)processUnifiedInputQueue_a1);
 }

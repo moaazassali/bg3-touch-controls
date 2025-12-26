@@ -3,8 +3,6 @@
 #include <SDL.h>
 
 #include "reverse/Camera.h"
-#include "reverse/input_manager.h"
-#include "reverse/action_request.h"
 
 
 namespace reverse {
@@ -36,9 +34,10 @@ namespace reverse {
 	// and processes all action requests in it.
 	// It does some filtering based on the current game state (like whether the UI is open or not)
 	// and then picks the most relevant action, which it pushes to the final action queue to be executed.
+	// a1 is a pointer to the InputManager singleton.
 	// a2 is a struct that this method fills out.
 	// a3 is a struct that holds two pointers to the start and end of the action requests queue.
-	using processActionRequestsQueue_t = void* (*)(InputManager* a1, void* a2, void* a3, uint8_t a4);
+	using processActionRequestsQueue_t = void* (*)(void* a1, void* a2, void* a3, uint8_t a4);
 	constexpr const uintptr_t offset_processActionRequestsQueue = 0x40C41C0;
 
 	// I am not very sure what this does yet, but it might be the only function that reads from the

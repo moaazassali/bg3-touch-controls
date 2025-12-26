@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "reverse/functions.h"
-#include "reverse/input_manager.h"
 
 // Assumes that MH_Initialize has already been called
 void bindToGame();
@@ -31,10 +30,5 @@ bool installDX11PresentHook();
 
 extern reverse::processActionRequestsQueue_t original_processActionRequestsQueue;
 extern reverse::filterPreFinalActionsQueue_t original_filterPreFinalActionsQueue;
-
-
-namespace reverse {
-	extern InputManager* g_inputManager;
-}
 
 extern bool g_gameWorldLoaded;

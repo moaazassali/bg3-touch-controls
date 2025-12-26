@@ -1,6 +1,6 @@
 #include <array>
 
-#include <reverse/action_request.h>
+#include "action_requests.h"
 
 // When the mouse is moved to the right, the game triggers several actions.
 // The one we care about for rotating the camera so far is CameraRotateMouseLeft (action ID 109).

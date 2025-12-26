@@ -3,13 +3,10 @@
 #include <span>
 
 #include "game_bindings.h"
-#include "reverse/action_request.h"
+#include "action_requests.h"
 
 
 namespace reverse {
-	void populateActionPointers(std::span<ActionRequest> seq);
-	void pushSequenceToBuffer(std::span<ActionRequest> seq, uint8_t playerIndex);
-
 	std::array<ActionRequest, 4> getSwipeUpSequence(float strength);
 	std::array<ActionRequest, 4> getSwipeDownSequence(float strength);
 	std::array<ActionRequest, 1> getWorldSwipeToggleSequence(bool isStart);
