@@ -59,7 +59,7 @@ static void initializeImGui(IDXGISwapChain* pSwapChain)
 static float calculateJoystickRadius()
 {
 	constexpr float radiusInCm = 1.0f;
-	const float radiusInPx = TouchHandler::cmToInches(radiusInCm) * (float)TouchHandler::getDPI();
+	const float radiusInPx = TouchHandler::cmToPixels(radiusInCm);
 	return radiusInPx;
 }
 
