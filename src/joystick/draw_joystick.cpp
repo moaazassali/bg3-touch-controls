@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "joystick/joystick.h"
+#include "touch_handler.h"
 
 
 typedef HRESULT(__stdcall* IDXGISwapChainPresent)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
@@ -58,9 +59,7 @@ static void initializeImGui(IDXGISwapChain* pSwapChain)
 static float calculateJoystickRadius()
 {
 	constexpr float radiusInCm = 1.0f;
-	constexpr float inchesInCm = 0.3937008f;
-	constexpr int DPI = 353; // Should match TouchHandler::DPI and be configurable
-	constexpr float radiusInPx = radiusInCm * inchesInCm * DPI;
+	const float radiusInPx = TouchHandler::cmToInches(radiusInCm) * (float)TouchHandler::getDPI();
 	return radiusInPx;
 }
 

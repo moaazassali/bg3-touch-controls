@@ -135,6 +135,14 @@ public:
 		return instance;
 	}
 
+	static int getDPI() {
+		return DPI;
+	}
+
+	static float cmToInches(float cm) {
+		return cm / 2.54f;
+	}
+
 	struct GestureEventsResult {
 		// If the time frame of checking gestures is larger than HOLD_THRESHOLD,
 		// then it is possible to miss the exact moment the hold is recognized and
