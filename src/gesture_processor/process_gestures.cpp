@@ -18,23 +18,7 @@ extern HWND g_gameHwnd;
 PendingCameraUpdates g_pendingCameraUpdates;
 
 
-static void processTap(const GestureEvent& event, POINT clientPt) {
-	resumeProcessingWorldEntityInteractions();
-	moveInternalCursor((float)clientPt.x, (float)clientPt.y);
-	auto task = []() {
-		sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);
-		// Keep hovering over the clicked entity for better visual feedback
-		freezeProcessingWorldEntityInteractions();
-		};
-
-	if (isCursorOverUI()) {
-		task();
-	}
-	else {
-		// Refer to move_internal_cursor/README.md for why we need a delay for world clicks
-		callAfterGameProcessesCursorUpdate(task);
-	}
-}
+void processTap(const GestureEvent& event, POINT clientPt);
 
 
 static void processHold(const GestureEvent& event, POINT clientPt) {
