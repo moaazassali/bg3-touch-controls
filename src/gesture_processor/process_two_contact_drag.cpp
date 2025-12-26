@@ -29,6 +29,49 @@ static void handleUIScroll(float deltaY) {
 }
 
 
+std::array<ActionRequest, 1> getTwoContactDragUpActions(float scaledValue, float rawValue);
+std::array<ActionRequest, 1> getTwoContactDragDownActions(float scaledValue, float rawValue);
+std::array<ActionRequest, 1> getTwoContactDragRightActions(float scaledValue, float rawValue);
+std::array<ActionRequest, 1> getTwoContactDragLeftActions(float scaledValue, float rawValue);
+
+
+constexpr float scalingFactor = 0.1f;
+
+static void handleOverWorldDrag(const GestureEvent& event) {
+	
+	const auto& dragData = std::get<DragData>(event.data);
+	const bool isDraggingRight = dragData.deltaX > 0;
+	const bool isDraggingUp = dragData.deltaY < 0;
+	const float strengthX = std::abs(dragData.deltaX) * scalingFactor;
+	const float strengthY = std::abs(dragData.deltaY) * scalingFactor;	
+
+	if (isDraggingRight) {
+		auto seq = getTwoContactDragRightActions(strengthX, strengthX);
+		processActionRequests(seq);
+	}
+	else {
+		auto seq = getTwoContactDragLeftActions(strengthX, strengthX);
+		processActionRequests(seq);
+	}
+
+	if (isDraggingUp) {
+		auto seq = getTwoContactDragUpActions(strengthY, strengthY);
+		processActionRequests(seq);
+	}
+	else {
+		auto seq = getTwoContactDragDownActions(strengthY, strengthY);
+		processActionRequests(seq);
+	}
+
+	if (event.phase == End) {
+		// Send zero strength to end the actions in case the End event had non-zero delta
+		auto seqX = getTwoContactDragRightActions(0.0f, 0.0f);
+		processActionRequests(seqX);
+		auto seqY = getTwoContactDragUpActions(0.0f, 0.0f);
+		processActionRequests(seqY);
+	}
+}
+
 static bool twoContactDragStartedOverUI = false;
 
 void processTwoContactDrag(const GestureEvent& event, POINT clientPt) {
@@ -41,7 +84,7 @@ void processTwoContactDrag(const GestureEvent& event, POINT clientPt) {
 	// we can only check if we're over UI synchronously here?
 	// Maybe we should put a write breakpoint on the g_isCursorOverUI boolean and see how the game updates it.
 	// Two finger manipulation. Use for panning. Invert for natural feel. Make configurable. 
-	auto& dragData = std::get<DragData>(event.data);
+	const auto& dragData = std::get<DragData>(event.data);
 
 	// See comment in processOneContactDrag
 	clearActiveWorldEntityInteractions();
@@ -66,11 +109,7 @@ void processTwoContactDrag(const GestureEvent& event, POINT clientPt) {
 		handleUIScroll(dragData.deltaY);
 	}
 	else {
-		constexpr float xPanFactor = -3.0f;
-		g_pendingCameraUpdates.xPanDelta.fetch_add(dragData.deltaX * xPanFactor);
-		constexpr float yPanFactor = -3.0f;
-		g_pendingCameraUpdates.yPanDelta.fetch_add(dragData.deltaY * yPanFactor);
-
+		handleOverWorldDrag(event);
 		// invert for natural feel. Make configurable.
 		constexpr float zoomFactor = -5.0f;
 		g_pendingCameraUpdates.zoomDelta.fetch_add(dragData.deltaSeparation * zoomFactor);

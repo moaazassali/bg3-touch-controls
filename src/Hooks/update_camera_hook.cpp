@@ -51,15 +51,15 @@ static void detour_updateCamera(uint64_t a1, uint64_t a2, reverse::DeltaTimeObje
 			if (isPanningIntent) {
 				// If we are panning, we disable followPlayer to allow free movement.
 				// If we are zooming only, we keep followPlayer enabled to keep the player centered.
-				cam->followPlayer = false;
+				//cam->followPlayer = false;
 			}
 			else {
 				cam->zoomDelta = zoomDelta;
 			}
 		}
 		else {
-			cam->horizontalPanDelta = xPanDelta;
-			cam->verticalPanDelta = yPanDelta;
+			//cam->horizontalPanDelta = xPanDelta;
+			//cam->verticalPanDelta = yPanDelta;
 			cam->zoomDelta = zoomDelta;
 		}
 	}
