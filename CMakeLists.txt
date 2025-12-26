@@ -49,6 +49,7 @@ add_library (BG3TouchControls SHARED
 	"src/action_requests/queue_action_requests.cpp"
 	"src/gesture_processor/process_gestures.cpp"
 	"src/gesture_processor/process_tap.cpp"
+	"src/gesture_processor/process_hold.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
