@@ -1,3 +1,5 @@
+#include <array>
+
 #include "game_bindings.h"
 
 
@@ -76,11 +78,11 @@ void resetWorldInteractionTargetResolver_a1() {
 
 	// NULL_HANDLE assignments (r9 register)
 	// These are the ID handles for different target types mentioned in README
-	*(uint64_t*)(a1 + 0xD8) = NULL_HANDLE;  // 216
-	*(uint64_t*)(a1 + 0xE0) = NULL_HANDLE;  // 224
-	*(uint64_t*)(a1 + 0xE8) = NULL_HANDLE;  // 232
-	*(uint64_t*)(a1 + 0xF0) = NULL_HANDLE;  // 240
-	*(uint64_t*)(a1 + 0xF8) = NULL_HANDLE;  // 248
+	*(uint64_t*)(a1 + 0xD8) = NULL_HANDLE;  // 216 - only set for NPCs
+	*(uint64_t*)(a1 + 0xE0) = NULL_HANDLE;  // 224 - only set for corpses
+	*(uint64_t*)(a1 + 0xE8) = NULL_HANDLE;  // 232 - only set for items
+	*(uint64_t*)(a1 + 0xF0) = NULL_HANDLE;  // 240 - any interactable object except corpses (generally the 'winner' target if interactable)
+	*(uint64_t*)(a1 + 0xF8) = NULL_HANDLE;  // 248 - first hit: everything except sky (can be different than F0 if pressing on item through an invisible game object)
 
 	// Clear flags
 	*(uint8_t*)(a1 + 0x100) &= 0xFC;        // 256
@@ -109,6 +111,23 @@ void resetWorldInteractionTargetResolver_a1() {
 
 	// Clear flags
 	// Seems to be flag for item or NPC type.
-	// Either 0, 1, or 2 from observations.
+	// Either 0 for none, 1 for item, 2 for NPC
 	*(uint8_t*)(a1 + 0x160) &= 0xFC;        // 352
+}
+
+
+std::array<uint64_t, 5> getCurrentWorldTargetEntityHandles()
+{
+	if (!worldInteractionTargetResolver_a1) {
+		return { 0, 0, 0, 0, 0 };
+	}
+
+	uintptr_t a1 = (uintptr_t)worldInteractionTargetResolver_a1;
+	return {
+		*(uint64_t*)(a1 + 0xD8), // NPC
+		*(uint64_t*)(a1 + 0xE0), // Corpse
+		*(uint64_t*)(a1 + 0xE8), // Item
+		*(uint64_t*)(a1 + 0xF0), // Interactable but not corpse
+		*(uint64_t*)(a1 + 0xF8)  // First hit
+	};
 }
