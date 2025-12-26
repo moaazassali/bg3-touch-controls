@@ -5,6 +5,7 @@
 #include "world_interaction.h"
 #include "pending_camera_updates.h"
 #include "reverse/action_sequences/action_sequences.h"
+#include "joystick/joystick.h"
 
 
 extern HWND g_gameHwnd;
@@ -36,22 +37,32 @@ std::array<ActionRequest, 1> getTwoContactDragLeftActions(float scaledValue, flo
 
 
 constexpr float scalingFactor = 0.1f;
-
 constexpr float minMovementThresholdInCm = 0.5f;
 static float accumulatedDeltaX = 0.0f;
 static float accumulatedDeltaY = 0.0f;
 static bool exceededMinMovementThreshold = false;
+static bool neverPanOverride = false;
 // TODO: If camera is already unlocked, we don't need to check for min movement threshold
-// TODO: If joystick is active, do not pan regardless of threshold to safe guard against
-// cases where threshold is not enough even though the user most likely intends to zoom
-// since they are using joystick for movement.
-// This means that we are assuming joystick movement cannot be used with camera panning.
-// I think that is a reasonable assumption because the user can still tap the screen to
-// move the character when the camera is 'unlocked'.
-// This is similar to how the game handles character movement while camera is unlocked
-// with controller -- the user can only click to move the character, not use the joystick.
+
+static void resetHandleOverWorldDrag() {
+	accumulatedDeltaX = 0.0f;
+	accumulatedDeltaY = 0.0f;
+	exceededMinMovementThreshold = false;
+	neverPanOverride = false;
+}
 
 static void handleOverWorldDrag(const GestureEvent& event) {
+	if (event.phase == Start) {
+		resetHandleOverWorldDrag();
+	}
+	// If the user is using the joystick (to move the character), it doesn't make sense to
+	// allow camera panning. It is also awkward to do both at the same time anyway.
+	// So, we will impose a restriction here to never allow camera panning if joystick is active.
+	// I think that is a reasonable assumption because the user can still tap the screen to
+	// move the character when the camera is 'unlocked'.
+	// This is similar to how the game handles character movement while camera is unlocked
+	// with controller -- the user can only click to move the character, not use the joystick.
+	neverPanOverride = g_joystickState.isActive;
 
 	const auto& dragData = std::get<DragData>(event.data);
 	const bool isDraggingRight = dragData.deltaX > 0;
@@ -61,12 +72,10 @@ static void handleOverWorldDrag(const GestureEvent& event) {
 
 	accumulatedDeltaX += dragData.deltaX;
 	accumulatedDeltaY += dragData.deltaY;
-
 	const auto distanceFromStart = std::sqrt(
 		accumulatedDeltaX * accumulatedDeltaX +
 		accumulatedDeltaY * accumulatedDeltaY
 	);
-
 	// Check if center moved enough to activate camera panning
 	// Otherwise, user most likely intends to zoom without panning
 	// So we shouldn't start a pan so that the camera keeps following the player
@@ -75,7 +84,9 @@ static void handleOverWorldDrag(const GestureEvent& event) {
 		exceededMinMovementThreshold = true;
 	}
 
-	if (exceededMinMovementThreshold) {
+	auto shouldPan = exceededMinMovementThreshold && !neverPanOverride;
+
+	if (shouldPan) {
 		if (isDraggingRight) {
 			auto seq = getTwoContactDragRightActions(strengthX, strengthX);
 			processActionRequests(seq);
@@ -93,19 +104,13 @@ static void handleOverWorldDrag(const GestureEvent& event) {
 			auto seq = getTwoContactDragDownActions(strengthY, strengthY);
 			processActionRequests(seq);
 		}
-	}
 
-	if (event.phase == End) {
-		if (exceededMinMovementThreshold) {
-			// Send zero strength to end the actions in case the End event had non-zero delta
+		if (event.phase == End) {
 			auto seqX = getTwoContactDragRightActions(0.0f, 0.0f);
 			processActionRequests(seqX);
 			auto seqY = getTwoContactDragUpActions(0.0f, 0.0f);
 			processActionRequests(seqY);
 		}
-		accumulatedDeltaX = 0.0f;
-		accumulatedDeltaY = 0.0f;
-		exceededMinMovementThreshold = false;
 	}
 }
 
