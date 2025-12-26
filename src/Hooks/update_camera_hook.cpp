@@ -21,47 +21,7 @@ static void detour_updateCamera(uint64_t a1, uint64_t a2, reverse::DeltaTimeObje
 		// user input adds.
 		// For now we assume only one input mode (touch).
 		auto cam = a4->currentCameraObject;
-
-		const auto xPanDelta = g_pendingCameraUpdates.xPanDelta.exchange(0.0f);
-		const auto yPanDelta = g_pendingCameraUpdates.yPanDelta.exchange(0.0f);
-		const auto zoomDelta = g_pendingCameraUpdates.zoomDelta.exchange(0.0f);
-		const auto isPanningOrZooming = xPanDelta != 0.0f || yPanDelta != 0.0f || zoomDelta != 0.0f;
-
-		if (isPanningOrZooming && cam->followPlayer) {
-			const float PAN_DOMINANCE_FACTOR = 10.0f;
-			const float MIN_PAN_THRESHOLD = 1.5f;
-			const float MIN_ZOOM_THRESHOLD = 0.5f;
-
-			float translationMagnitude = sqrt(
-				xPanDelta * xPanDelta +
-				yPanDelta * yPanDelta
-			);
-			float expansionMagnitude = abs(zoomDelta);
-
-			auto isPanningIntent = false;
-			if (expansionMagnitude < MIN_ZOOM_THRESHOLD && translationMagnitude > MIN_PAN_THRESHOLD) {
-				// Barely any zoom happening, so check if panning is significant enough.
-				isPanningIntent = true;
-			}
-			else if (translationMagnitude > expansionMagnitude * PAN_DOMINANCE_FACTOR) {
-				// Zoom is happening, so check if panning is significantly stronger than zooming.
-				isPanningIntent = true;
-			}
-
-			if (isPanningIntent) {
-				// If we are panning, we disable followPlayer to allow free movement.
-				// If we are zooming only, we keep followPlayer enabled to keep the player centered.
-				//cam->followPlayer = false;
-			}
-			else {
-				cam->zoomDelta = zoomDelta;
-			}
-		}
-		else {
-			//cam->horizontalPanDelta = xPanDelta;
-			//cam->verticalPanDelta = yPanDelta;
-			cam->zoomDelta = zoomDelta;
-		}
+		cam->zoomDelta = g_pendingCameraUpdates.zoomDelta.exchange(0.0f);
 	}
 	original_updateCamera(a1, a2, a3, a4);
 }
