@@ -50,6 +50,7 @@ add_library (BG3TouchControls SHARED
 	"src/gesture_processor/process_gestures.cpp"
 	"src/gesture_processor/process_tap.cpp"
 	"src/gesture_processor/process_hold.cpp"
+	"src/gesture_processor/process_one_contact_drag.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
