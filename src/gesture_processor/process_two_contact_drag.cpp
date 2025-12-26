@@ -37,38 +37,75 @@ std::array<ActionRequest, 1> getTwoContactDragLeftActions(float scaledValue, flo
 
 constexpr float scalingFactor = 0.1f;
 
+constexpr float minMovementThresholdInCm = 0.5f;
+static float accumulatedDeltaX = 0.0f;
+static float accumulatedDeltaY = 0.0f;
+static bool exceededMinMovementThreshold = false;
+// TODO: If camera is already unlocked, we don't need to check for min movement threshold
+// TODO: If joystick is active, do not pan regardless of threshold to safe guard against
+// cases where threshold is not enough even though the user most likely intends to zoom
+// since they are using joystick for movement.
+// This means that we are assuming joystick movement cannot be used with camera panning.
+// I think that is a reasonable assumption because the user can still tap the screen to
+// move the character when the camera is 'unlocked'.
+// This is similar to how the game handles character movement while camera is unlocked
+// with controller -- the user can only click to move the character, not use the joystick.
+
 static void handleOverWorldDrag(const GestureEvent& event) {
-	
+
 	const auto& dragData = std::get<DragData>(event.data);
 	const bool isDraggingRight = dragData.deltaX > 0;
 	const bool isDraggingUp = dragData.deltaY < 0;
 	const float strengthX = std::abs(dragData.deltaX) * scalingFactor;
-	const float strengthY = std::abs(dragData.deltaY) * scalingFactor;	
+	const float strengthY = std::abs(dragData.deltaY) * scalingFactor;
 
-	if (isDraggingRight) {
-		auto seq = getTwoContactDragRightActions(strengthX, strengthX);
-		processActionRequests(seq);
-	}
-	else {
-		auto seq = getTwoContactDragLeftActions(strengthX, strengthX);
-		processActionRequests(seq);
+	accumulatedDeltaX += dragData.deltaX;
+	accumulatedDeltaY += dragData.deltaY;
+
+	const auto distanceFromStart = std::sqrt(
+		accumulatedDeltaX * accumulatedDeltaX +
+		accumulatedDeltaY * accumulatedDeltaY
+	);
+
+	// Check if center moved enough to activate camera panning
+	// Otherwise, user most likely intends to zoom without panning
+	// So we shouldn't start a pan so that the camera keeps following the player
+	// instead of being "unlocked"
+	if (distanceFromStart >= TouchHandler::cmToPixels(minMovementThresholdInCm)) {
+		exceededMinMovementThreshold = true;
 	}
 
-	if (isDraggingUp) {
-		auto seq = getTwoContactDragUpActions(strengthY, strengthY);
-		processActionRequests(seq);
-	}
-	else {
-		auto seq = getTwoContactDragDownActions(strengthY, strengthY);
-		processActionRequests(seq);
+	if (exceededMinMovementThreshold) {
+		if (isDraggingRight) {
+			auto seq = getTwoContactDragRightActions(strengthX, strengthX);
+			processActionRequests(seq);
+		}
+		else {
+			auto seq = getTwoContactDragLeftActions(strengthX, strengthX);
+			processActionRequests(seq);
+		}
+
+		if (isDraggingUp) {
+			auto seq = getTwoContactDragUpActions(strengthY, strengthY);
+			processActionRequests(seq);
+		}
+		else {
+			auto seq = getTwoContactDragDownActions(strengthY, strengthY);
+			processActionRequests(seq);
+		}
 	}
 
 	if (event.phase == End) {
-		// Send zero strength to end the actions in case the End event had non-zero delta
-		auto seqX = getTwoContactDragRightActions(0.0f, 0.0f);
-		processActionRequests(seqX);
-		auto seqY = getTwoContactDragUpActions(0.0f, 0.0f);
-		processActionRequests(seqY);
+		if (exceededMinMovementThreshold) {
+			// Send zero strength to end the actions in case the End event had non-zero delta
+			auto seqX = getTwoContactDragRightActions(0.0f, 0.0f);
+			processActionRequests(seqX);
+			auto seqY = getTwoContactDragUpActions(0.0f, 0.0f);
+			processActionRequests(seqY);
+		}
+		accumulatedDeltaX = 0.0f;
+		accumulatedDeltaY = 0.0f;
+		exceededMinMovementThreshold = false;
 	}
 }
 
