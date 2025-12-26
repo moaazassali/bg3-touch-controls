@@ -84,3 +84,25 @@ bool installPushToActionRequestQueueHook(uintptr_t start, uintptr_t end, bool en
 	original_pushToActionRequestQueue = (pushToActionRequestQueue_t)matchAddr;
 	return true;
 }
+
+
+// This function retrieves the struct that holds a list of all action request queues.
+// a1 is the address of what seems to be a list of action buffers
+// it is at offset 0x40 of the InputManager singleton instance.
+// a2 is the player index (useful for local co-op).
+// 0 = player 1 (i.e. when playing solo or as the first player in local co-op)
+using getActionRequestsQueuesList_t = void* (*)(void* a1, uint8_t* a2);
+getActionRequestsQueuesList_t original_getActionRequestsQueuesList = nullptr;
+
+
+bool installGetActionRequestsQueuesListHook(uintptr_t start, uintptr_t end)
+{
+	constexpr const char* pattern_getActionRequestsQueuesList = "40 53 56 57 48 83 EC 20 48 63 71 2C 4C 8B C2 48 8D 54 24 40 48 8B D9 E8 ?? ?? ?? ?? 8B 53 28 48 8D 7B 30 3B 53 38 7E 2A";
+	uintptr_t matchAddr = findPattern(pattern_getActionRequestsQueuesList, start, end);
+	if (!matchAddr) {
+		printPatternNotFoundError(pattern_getActionRequestsQueuesList, "getActionRequestsQueuesList");
+		return false;
+	}
+	original_getActionRequestsQueuesList = (getActionRequestsQueuesList_t)matchAddr;
+	return true;
+}

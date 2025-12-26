@@ -16,7 +16,7 @@ namespace reverse {
 
 	void pushSequenceToBuffer(std::span<ActionRequest> seq, uint8_t playerIndex) {
 		EnterCriticalSection((CRITICAL_SECTION*)reverse::g_inputManager);
-		void* actionRequestsBuffer = original_getActionRequestsBuffer(reinterpret_cast<void*>(&g_inputManager->actionBufferManagerStuctStart), &playerIndex);
+		void* actionRequestsBuffer = original_getActionRequestsQueuesList(reinterpret_cast<void*>(&g_inputManager->actionBufferManagerStuctStart), &playerIndex);
 		auto q1 = actionRequestsBuffer;
 		auto q2 = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(actionRequestsBuffer) + 0x10);
 		auto q3 = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(actionRequestsBuffer) + 0x20);

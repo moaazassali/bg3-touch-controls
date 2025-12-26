@@ -12,7 +12,6 @@
 #include "action_requests.h"
 
 
-reverse::getActionRequestsBuffer_t original_getActionRequestsBuffer = nullptr;
 reverse::processActionRequestsQueue_t original_processActionRequestsQueue = nullptr;
 reverse::InternalCursorPosition** reverse::g_internalCursorPosition = nullptr;
 reverse::filterPreFinalActionsQueue_t original_filterPreFinalActionsQueue = nullptr;
@@ -124,7 +123,6 @@ bool installHook(LPVOID pTarget, LPVOID pDetour, LPVOID* ppOriginal, const char*
 	
 static void initializePointers(uintptr_t start, uintptr_t end)
 {
-	original_getActionRequestsBuffer = (reverse::getActionRequestsBuffer_t)(start + reverse::offset_getActionRequestsBuffer);
 	original_processActionRequestsQueue = (reverse::processActionRequestsQueue_t)(start + reverse::offset_processActionRequestsQueue);
 	original_filterPreFinalActionsQueue = (reverse::filterPreFinalActionsQueue_t)(start + reverse::offset_filterPreFinalActionsQueue);
 	reverse::g_internalCursorPosition = (reverse::InternalCursorPosition**)(start + reverse::offset_internalCursorPosition);

@@ -5,6 +5,7 @@
 bool installProcessUnifiedInputEventHook(uintptr_t start, uintptr_t end);
 bool installProcessUnifiedInputQueueHook(uintptr_t start, uintptr_t end);
 bool installPushToActionRequestQueueHook(uintptr_t start, uintptr_t end, bool enableDebug);
+bool installGetActionRequestsQueuesListHook(uintptr_t start, uintptr_t end);
 
 
 bool installActionRequestsModule(uintptr_t start, uintptr_t end, bool enableDebug) {
@@ -13,6 +14,7 @@ bool installActionRequestsModule(uintptr_t start, uintptr_t end, bool enableDebu
 	success &= installProcessUnifiedInputEventHook(start, end);
 	success &= installProcessUnifiedInputQueueHook(start, end);
 	success &= installPushToActionRequestQueueHook(start, end, enableDebug);
+	success &= installGetActionRequestsQueuesListHook(start, end);
 	printModuleInstallResult(success);
 	return success;
 }

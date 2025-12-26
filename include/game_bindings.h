@@ -29,7 +29,6 @@ bool installRegisterHotBarUIBindingHandlersHook(uintptr_t start, uintptr_t end);
 bool installDX11PresentHook();
 
 
-extern reverse::getActionRequestsBuffer_t original_getActionRequestsBuffer;
 extern reverse::processActionRequestsQueue_t original_processActionRequestsQueue;
 extern reverse::filterPreFinalActionsQueue_t original_filterPreFinalActionsQueue;
 
