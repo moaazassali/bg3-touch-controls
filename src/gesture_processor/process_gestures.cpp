@@ -1,6 +1,7 @@
 #include <wtypes.h>
 #include <algorithm>
 
+#include "gesture_processor.h"
 #include "utils.h"
 #include "touch_handler.h"
 #include "sdl_bindings/sdl_bindings.h"
@@ -320,7 +321,7 @@ static void processSingleGestureEvent(const GestureEvent& event, POINT clientPt)
 }
 
 
-void processTouchInput() {
+void processGestures() {
 	auto events = TouchHandler::getSingleton().getGestureEvents();
 
 	for (int i = 0; i < events.count; ++i) {

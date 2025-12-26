@@ -38,7 +38,6 @@ add_library (BG3TouchControls SHARED
 	"src/joystick/dx11_present_hook.cpp"
 	"src/joystick/draw_joystick.cpp"
 	"src/touch_handler.cpp"
-	"src/gesture_events_processor.cpp"
 	"src/Hooks/move_character_hook.cpp"
 	"src/move_internal_cursor/module.cpp"
 	"src/move_internal_cursor/update_internal_cursor_coordinates.cpp"
@@ -48,6 +47,7 @@ add_library (BG3TouchControls SHARED
 	"src/action_requests/module.cpp"
 	"src/action_requests/process_unified_input_event.cpp"
 	"src/action_requests/queue_action_requests.cpp"
+	"src/gesture_processor/process_gestures.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
