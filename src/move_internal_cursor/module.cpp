@@ -1,5 +1,6 @@
 #include "move_internal_cursor.h"
 #include "utils.h"
+#include "world_interaction.h"
 
 
 bool installRawInputHandlerHook(uintptr_t start, uintptr_t end);
@@ -29,6 +30,7 @@ void registerDeferredTask(int framesDelay, std::function<void()> func);
 // x and y are window coordinates from top-left corner in pixels, not screen coordinates
 bool moveInternalCursor(float x, float y) {
 	updateInternalCursorCoordinates(x, y);
+	updateWorldInteractions();
 	return updateCursorOverUIFlag(x, y);
 }
 

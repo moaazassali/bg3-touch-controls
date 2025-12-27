@@ -47,7 +47,7 @@ corresponding struct offset for that target type. The ID fields I found are:
 I am not 100% confident, but they should be roughly correct.
 
 
-## The Problem
+## Motivation 1
 When we tap on the screen, drag or do any touch interaction, we need to update
 the internal cursor position. This, in turn, causes hover effects in the world
 to trigger, which is distracting. Touch input doesn't have a concept of hover,
@@ -150,3 +150,32 @@ If we want to be able to use mouse input simultaneously with touch input, mouse
 input will not work properly for world interactions. This use case is highly
 unlikely, so we won't support it for now. We could potentially fix it by
 detecting a mouse input event and re-enabling the `worldInteractionUpdater`.
+
+
+## Motivation 2
+[Note: A lot of speculation]
+
+See 'Move Internal Cursor' Caveat 3 for more details as to why we need to force
+process the world interaction state update after moving the internal cursor.
+To do this, the simplest way is to directly call `worldInteractionUpdater` when
+needed. However, keep in mind that `worldInteractionUpdater` doesn't fully
+update the world interaction state on its own. This means that having multiple
+calls to `worldInteractionUpdater` consecutively actuall does nothing. We can
+only have one effective call every frame. Again, I don't fully understand the
+logic here, so I might be wrong, but those are my observations so far.
+
+A consequence of this is that we can't move cursor, update world interaction
+state, then send click action and update the world interaction state again. We
+can only send the click action synchronously but we have to wait until the next
+frame for the game to update the world interaction state again itself.
+
+These observations are based on testing the handling of tap gestures in the
+'Gesture Processor' module:
+
+The world interaction state doesn't seem to get updated properly if we send
+multiple actions at the same time or sometimes even in different frames in
+sequence. For instance, clicking on some ability (UI click) and then clicking
+on the world to execute the ability doesn't immediately work. Instead, we need
+to send the press in initially and then wait a few frames before sending the
+the release action. Sending it in the next 1-5 frames doesn't seem to work
+either. 

@@ -178,15 +178,14 @@ moves the character to the old cursor position. I still don't fully understand
 the issue though. Maybe I am making things up here.
 
 If we need to synchronously update the world interaction state after moving the
-cursor, then we could call `worldInteractionUpdater` directly. However, I think
-that would not work either because I think the issue is that it relies on the
-result from an async consumer that it dispatches the ray cast result to. So,
-we will end up with the same stale data issue. We could instead do ray casting
-ourselves and also call the consumer directly, but that seems very complicated.
+cursor, then we could call `worldInteractionUpdater` directly. However, it
+looks like it relies on the result from an async consumer that it dispatches
+the ray cast result to. But calling it directly would at least ensure that any
+action that happens next will happen after the world interaction state is
+updated since the consumer would have sent its result already (maybe?). At
+least doing so seems to work so far in ensuring the just the next action is
+correctly handled.
 
-Instead, we will settle for a compromise: for world interaction events, we will
-schedule a task that runs in the frame after the frame that first read the new
-cursor coordinates we updated. This way, we give enough time for the async 
-consumer to process the new coordinates before we tell it to handle world
-clicks again. This only affects taps and holds that interact with world
-objects, so the two frame delay should still feel responsive.
+The altnerative is to this direct call is to instead queue whatever any action
+that depends on the world interaction state (like some world clicks) to be
+processed in the frame after the new cursor position was processed in.

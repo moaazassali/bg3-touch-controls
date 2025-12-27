@@ -5,12 +5,14 @@
 
 
 bool installWorldInteractionTargetResolverHook(uintptr_t start, uintptr_t end);
+bool installWorldInteractionUpdaterHook(uintptr_t start, uintptr_t end);
 
 
 bool installWorldInteractionModule(uintptr_t start, uintptr_t end) {
 	printModuleInstallHeader("World Interaction");
 	bool success = true;
 	success &= installWorldInteractionTargetResolverHook(start, end);
+	success &= installWorldInteractionUpdaterHook(start, end);
 	printModuleInstallResult(success);
 	return success;
 }
@@ -20,6 +22,7 @@ void bypassWorldInteractionTargetResolver();
 void useOriginalWorldInteractionTargetResolver();
 void resetWorldInteractionTargetResolver_a1();
 std::array<uint64_t, 5> getCurrentWorldTargetEntityHandles();
+void forceProcessWorldEntityInteractions();
 
 
 void freezeProcessingWorldEntityInteractions() {
@@ -57,4 +60,9 @@ WorldEntity getCurrentWorldTargetEntity() {
 	else {
 		return { WorldEntityType::None, 0 };
 	}
+}
+
+
+void updateWorldInteractions() {
+	forceProcessWorldEntityInteractions();
 }

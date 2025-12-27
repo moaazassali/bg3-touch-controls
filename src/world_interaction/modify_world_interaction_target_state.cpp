@@ -131,3 +131,36 @@ std::array<uint64_t, 5> getCurrentWorldTargetEntityHandles()
 		*(uint64_t*)(a1 + 0xF8)  // First hit
 	};
 }
+
+
+using worldInteractionUpdater_t = void (*)(void* a1);
+worldInteractionUpdater_t original_worldInteractionUpdater = nullptr;
+static void* worldInteractionUpdater_a1 = nullptr;
+
+
+static void detour_worldInteractionUpdater(void* a1)
+{
+	if (a1)
+	{
+		worldInteractionUpdater_a1 = a1;
+	}
+	return original_worldInteractionUpdater(a1);
+}
+
+
+bool installWorldInteractionUpdaterHook(uintptr_t start, uintptr_t end)
+{
+	constexpr const char* pattern_processWorldInteractions = "48 8B C4 48 89 58 10 48 89 70 18 48 89 78 20 55 41 54 41 55 41 56 41 57 48 8D 68 88 48 81 EC 50 01 00 00 0F 29 70 C8 0F 29 78 B8 44 0F 29 40 A8 44";
+	uintptr_t matchAddr = findPattern(pattern_processWorldInteractions, start, end);
+	return installHook((void*)matchAddr, &detour_worldInteractionUpdater, (void**)&original_worldInteractionUpdater, "processWorldInteractions");
+}
+
+
+void forceProcessWorldEntityInteractions()
+{
+	if (!worldInteractionUpdater_a1)
+	{
+		return;
+	}
+	original_worldInteractionUpdater(worldInteractionUpdater_a1);
+}

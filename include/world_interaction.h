@@ -26,3 +26,5 @@ struct WorldEntity {
 
 
 WorldEntity getCurrentWorldTargetEntity();
+
+void updateWorldInteractions();
