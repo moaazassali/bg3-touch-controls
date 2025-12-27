@@ -19,7 +19,6 @@ struct DeferredTask {
 	std::function<void()> taskFunc = nullptr;
 };
 DeferredTask pendingTask;
-std::mutex taskMutex;
 
 
 static void detour_rawInputHandler(void* a1, void* a2)
@@ -46,12 +45,10 @@ static void detour_rawInputHandler(void* a1, void* a2)
 
 	// Deferred task execution
 	{
-		std::lock_guard<std::mutex> lock(taskMutex);
 		if (pendingTask.remainingFrames > 0) {
 			pendingTask.remainingFrames--;
 			if (pendingTask.remainingFrames == 0 && pendingTask.taskFunc) {
 				pendingTask.taskFunc();
-				pendingTask.taskFunc = nullptr;
 			}
 		}
 	}
