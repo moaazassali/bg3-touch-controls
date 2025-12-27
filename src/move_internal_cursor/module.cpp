@@ -40,13 +40,12 @@ bool isCursorOverUI() {
 }
 
 
-void callAfterGameProcessesCursorUpdate(std::function<void()> func) {
+void callAfterGameProcessesCursorUpdate(std::function<void()> func, uint8_t frameDelay) {
 	// 2 frames is the minimum delay needed to guarantee the game processed the cursor update
 	// If the hooked function is not running right now, then our cursor update will be processed
 	// in the next frame, so we need to wait one more frame after that.
 	// In the rare case the hooked function is running right now, and our cursor update happens
 	// before it decides to trigger cursor update side effects, then 1 frame will be enough.
 	// So to cover all cases, we use 2 frames delay.
-	constexpr int framesDelay = 2;
-	registerDeferredTask(framesDelay, func);
+	registerDeferredTask(frameDelay, func);
 }
