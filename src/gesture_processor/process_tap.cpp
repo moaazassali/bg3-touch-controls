@@ -7,7 +7,7 @@
 
 
 void processTap(const GestureEvent& event, POINT clientPt) {
-	auto prevEntity = getCurrentWorldTargetEntity();
+	const auto prevEntity = getCurrentWorldTargetEntity();
 	moveInternalCursor((float)clientPt.x, (float)clientPt.y);
 
 	// Not really needed but if UI element was clicked on before and has a hover effect active like
@@ -18,20 +18,35 @@ void processTap(const GestureEvent& event, POINT clientPt) {
 	sdl_bindings::moveCursor(clientPt.x, clientPt.y);
 
 	if (isCursorOverUI()) {
-		// No special consideration needed for UI taps
 		sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);
+		// The world interaction target state doesn't get updated on a UI click and maintains
+		// the last target entity. Consider the case where the user taps on an entity to focus it,
+		// then taps on a UI element, and then taps back on the same entity, we will end up sending
+		// a click instead of just focusing on it again because prev and curr entity will match.
+		// 
+		// This is a consequence of our approach because we aren't resuming world interaction processing
+		// when clicking on UI. But in doing so, we also introduce other issues: The state gets updated
+		// with whatever entity is behind that UI element, which is fine. However, the issue happens when
+		// the user then taps back at some entity. For some reason, the state doesn't get updated properly
+		// and it has the previous entity instead DESPITE the new entity being focused on now with hover
+		// effects and all. So this code will think we are, let's say, over ground when in fact we tapped
+		// on an entity, so we send a click on the entity instead of just focusing on it again...
+		// 
+		// Either way, clearing the active entity interactions state will fix it.
+		clearActiveWorldEntityInteractions(); 
 		freezeProcessingWorldEntityInteractions();
 		return;
 	}
-
-	resumeProcessingWorldEntityInteractions();
-	auto currEntity = getCurrentWorldTargetEntity();
-
-	bool sentPressIn = false;
+	
 	// Instead of clicking immediately on any entity, I found it more UX friendly to make the
 	// first click a focus/hover action, and only click on the second tap if the entity is the same
 	// So, only register a tap if we were focused on an interactable entity from a previous tap
 	// and the current entity from the second tap is still the same
+	// XXX: should we open context menu on first tap instead of just focusing?
+	resumeProcessingWorldEntityInteractions();
+	updateWorldInteractions();
+	const auto currEntity = getCurrentWorldTargetEntity();
+	bool sentPressIn = false;
 	if (currEntity.type != WorldEntityType::None && currEntity.type != WorldEntityType::NonInteractable) {
 		if (currEntity.type == prevEntity.type && currEntity.id == prevEntity.id) {
 			// Only send 'press in' event instead of full click immediately.
