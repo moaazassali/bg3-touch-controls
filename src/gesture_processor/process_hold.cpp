@@ -11,9 +11,10 @@ void processHold(const GestureEvent& event, POINT clientPt) {
 	// and another when the finger is lifted.
 	// We don't want to send another click when the finger is lifted.
 	if (event.phase == Update) {
-		resumeProcessingWorldEntityInteractions();
 		moveInternalCursor((float)clientPt.x, (float)clientPt.y);
-		sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
+		resumeProcessingWorldEntityInteractions();
+		updateWorldInteractions();
 		freezeProcessingWorldEntityInteractions();
+		sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
 	}
 }

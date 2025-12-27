@@ -7,11 +7,8 @@
 
 
 void processTap(const GestureEvent& event, POINT clientPt) {
-	resumeProcessingWorldEntityInteractions();
-
 	auto prevEntity = getCurrentWorldTargetEntity();
 	moveInternalCursor((float)clientPt.x, (float)clientPt.y);
-	auto currEntity = getCurrentWorldTargetEntity();
 
 	// Not really needed but if UI element was clicked on before and has a hover effect active like
 	// the details pop-up, this sends a UIMouseMove event which will clear that hover effect properly.
@@ -26,6 +23,9 @@ void processTap(const GestureEvent& event, POINT clientPt) {
 		freezeProcessingWorldEntityInteractions();
 		return;
 	}
+
+	resumeProcessingWorldEntityInteractions();
+	auto currEntity = getCurrentWorldTargetEntity();
 
 	bool sentPressIn = false;
 	// Instead of clicking immediately on any entity, I found it more UX friendly to make the

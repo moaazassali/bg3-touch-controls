@@ -28,9 +28,9 @@ void registerDeferredTask(int framesDelay, std::function<void()> func);
 
 
 // x and y are window coordinates from top-left corner in pixels, not screen coordinates
+// Remember to call updateWorldInteractions() if this is used for world interaction purposes
 bool moveInternalCursor(float x, float y) {
 	updateInternalCursorCoordinates(x, y);
-	updateWorldInteractions();
 	return updateCursorOverUIFlag(x, y);
 }
 
