@@ -13,18 +13,7 @@ void processHold(const GestureEvent& event, POINT clientPt) {
 	if (event.phase == Update) {
 		resumeProcessingWorldEntityInteractions();
 		moveInternalCursor((float)clientPt.x, (float)clientPt.y);
-		auto task = []() {
-			sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
-			// Keep hovering over the clicked entity for better visual feedback
-			freezeProcessingWorldEntityInteractions();
-			};
-
-		if (isCursorOverUI()) {
-			task();
-		}
-		else {
-			// Refer to move_internal_cursor/README.md for why we need a delay for world clicks
-			callAfterGameProcessesCursorUpdate(task);
-		}
+		sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
+		freezeProcessingWorldEntityInteractions();
 	}
 }
