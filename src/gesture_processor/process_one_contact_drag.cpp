@@ -108,6 +108,7 @@ static bool dragStartedOverUI = false;
 // We need to know which drag event is for joystick/camera
 static int joystickTouchInputId = -1;
 static int cameraTouchInputId = -1;
+static int itemDragTouchInputId = -1;
 
 
 void processOneContactDrag(const GestureEvent& event, POINT clientPt) {
@@ -119,9 +120,9 @@ void processOneContactDrag(const GestureEvent& event, POINT clientPt) {
 	auto& dragData = std::get<DragData>(event.data);
 
 	// Since we freeze hovering over world entities we tapped/held on, we need to clear that hover
-	clearActiveWorldEntityInteractions();
+	//clearActiveWorldEntityInteractions();
 	// Keep stopping interactions processing in case it was re-enabled by a tap/hold while dragging
-	freezeProcessingWorldEntityInteractions();
+	//freezeProcessingWorldEntityInteractions();
 
 	if (event.phase == Start) {
 		// clientPt is current position with any initial delta, not the start position
@@ -134,19 +135,38 @@ void processOneContactDrag(const GestureEvent& event, POINT clientPt) {
 			sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
 		}
 		else {
-			// Joystick activation area is left half of the screen
-			auto windowSize = getWindowSizePx(g_gameHwnd);
-			if (clientPt.x < windowSize.cx / 2 && g_gameWorldLoaded && joystickTouchInputId == -1) {
-				activateJoystick((float)startX, (float)startY);
-				joystickTouchInputId = event.touchInputId;
-				// Send right click to disable force stop any active click-to-move character movement
-				// Character movement with joystick doesn't work otherwise until the previous movement ends
-				// This shouldn't cause any unintended side effects because we are not over UI and because
-				// world interactions are frozen.
-				sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
+			// Check if we are dragging an item in the world that we are focused on
+			const auto prevEntity = getCurrentWorldTargetEntity();
+			resumeProcessingWorldEntityInteractions();
+			updateWorldInteractions();
+			freezeProcessingWorldEntityInteractions();
+			const auto currEntity = getCurrentWorldTargetEntity();
+			// Only a subset of items can be dragged in the world
+			if (currEntity.type == WorldEntityType::Item &&
+				currEntity.type == prevEntity.type &&
+				currEntity.id == prevEntity.id) {
+				// send click to start drag
+				sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
+				itemDragTouchInputId = event.touchInputId;
 			}
 			else {
-				cameraTouchInputId = cameraTouchInputId == -1 ? event.touchInputId : cameraTouchInputId;
+				// Not dragging an item in the world, so clear any hover effects
+				clearActiveWorldEntityInteractions();
+				clearActiveWorldEntityInteractions(); // not really needed but be defensive
+				// Joystick activation area is left half of the screen
+				auto windowSize = getWindowSizePx(g_gameHwnd);
+				if (clientPt.x < windowSize.cx / 2 && g_gameWorldLoaded && joystickTouchInputId == -1) {
+					activateJoystick((float)startX, (float)startY);
+					joystickTouchInputId = event.touchInputId;
+					// Send right click to disable force stop any active click-to-move character movement
+					// Character movement with joystick doesn't work otherwise until the previous movement ends
+					// This shouldn't cause any unintended side effects because we are not over UI and because
+					// world interactions are frozen.
+					sdl_bindings::clickMouseButton(SDL_BUTTON_RIGHT);
+				}
+				else {
+					cameraTouchInputId = cameraTouchInputId == -1 ? event.touchInputId : cameraTouchInputId;
+				}
 			}
 		}
 	}
@@ -168,6 +188,10 @@ void processOneContactDrag(const GestureEvent& event, POINT clientPt) {
 			// Accesses global array, but should be fine because our calls are always in order with large enough delays.
 			handlePitchUpdate(dragData.deltaY, event.phase);
 		}
+		if (event.touchInputId == itemDragTouchInputId) {
+			// send mouse move to continue item drag
+			sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+		}
 	}
 
 	if (event.phase == End) {
@@ -177,6 +201,11 @@ void processOneContactDrag(const GestureEvent& event, POINT clientPt) {
 		}
 		if (event.touchInputId == cameraTouchInputId) {
 			cameraTouchInputId = -1;
+		}
+		if (event.touchInputId == itemDragTouchInputId) {
+			// send release to end item drag
+			sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
+			itemDragTouchInputId = -1;
 		}
 		if (dragStartedOverUI) {
 			sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
