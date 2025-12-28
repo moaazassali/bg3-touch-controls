@@ -46,6 +46,8 @@ void processTap(const GestureEvent& event, POINT clientPt) {
 	resumeProcessingWorldEntityInteractions();
 	updateWorldInteractions();
 	const auto currEntity = getCurrentWorldTargetEntity();
+	freezeProcessingWorldEntityInteractions();
+
 	bool sentPressIn = false;
 	if (currEntity.type != WorldEntityType::None && currEntity.type != WorldEntityType::NonInteractable) {
 		if (currEntity.type == prevEntity.type && currEntity.id == prevEntity.id) {
@@ -67,7 +69,6 @@ void processTap(const GestureEvent& event, POINT clientPt) {
 
 	auto pressOutTask = []() {
 		sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
-		freezeProcessingWorldEntityInteractions();
 	};
 
 	// We need a significant delay here to address a bug in the world interaction system.
