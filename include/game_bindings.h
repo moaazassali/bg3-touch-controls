@@ -25,8 +25,6 @@ bool installRegisterHotBarUIBindingsHook(uintptr_t start, uintptr_t end);
 bool installIncreaseHotBarUIBindingHandlersStructSizePatch(uintptr_t start, uintptr_t end);
 bool installRegisterHotBarUIBindingHandlersHook(uintptr_t start, uintptr_t end);
 
-bool installDX11PresentHook();
-
 
 extern reverse::processActionRequestsQueue_t original_processActionRequestsQueue;
 extern reverse::filterPreFinalActionsQueue_t original_filterPreFinalActionsQueue;

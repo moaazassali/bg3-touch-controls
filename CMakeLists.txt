@@ -35,7 +35,6 @@ add_library (BG3TouchControls SHARED
 	"src/reverse/action_sequences/world_swipe_right_sequence.cpp"
 	"src/reverse/action_sequences/world_swipe_left_sequence.cpp"
 	"src/reverse/action_sequences/world_swipe_toggle_sequence.cpp"
-	"src/joystick/dx11_present_hook.cpp"
 	"src/joystick/draw_joystick.cpp"
 	"src/touch_handler.cpp"
 	"src/Hooks/move_character_hook.cpp"
@@ -55,6 +54,8 @@ add_library (BG3TouchControls SHARED
 	"src/gesture_processor/actions_two_contact_drag.cpp"
 	"src/ability_usage/module.cpp"
 	"src/ability_usage/detect_primed_ability.cpp"
+	"src/render_hook/module.cpp"
+	"src/render_hook/dx11_present_hook.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")

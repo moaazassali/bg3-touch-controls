@@ -11,6 +11,7 @@
 #include "world_interaction.h"
 #include "action_requests.h"
 #include "ability_usage.h"
+#include "render_hook.h"
 
 
 reverse::processActionRequestsQueue_t original_processActionRequestsQueue = nullptr;
@@ -142,7 +143,6 @@ static void installHooks(uintptr_t start, uintptr_t end)
 	success &= installRegisterHotBarUIBindingHandlersHook(start, end);
 	//success &= installPushToActionRequestsQueueHook(start, end);
 	//success &= installFilterPreFinalActionsQueueHook(start, end);
-	success &= installDX11PresentHook();
 	success &= installMoveCharacterHook(start, end);
 	success &= installRunMoveCharacterwithoutControllerPatch(start, end);
 
@@ -150,6 +150,7 @@ static void installHooks(uintptr_t start, uintptr_t end)
 	success &= installWorldInteractionModule(start, end);
 	success &= installActionRequestsModule(start, end, false);
 	success &= installAbilityUsageModule(start, end);
+	success &= installRenderHookModule();
 
 	if (success) {
 		std::cout << "All hooks installed successfully." << std::endl;

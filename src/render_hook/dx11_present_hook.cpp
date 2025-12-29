@@ -1,12 +1,14 @@
 #include <d3d11.h>
+#include <imgui.h>
+#include <imgui_impl_dx11.h>
+#include <imgui_impl_win32.h>
 
 #include "game_bindings.h"
+#include "joystick/joystick.h"
 
 
 typedef HRESULT(__stdcall* IDXGISwapChainPresent)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
 IDXGISwapChainPresent original_DX11Present = nullptr;
-
-HRESULT __stdcall detour_DX11Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
 
 // The index for Present in IDXGISwapChain is always 8
 constexpr int PE_PRESENT_INDEX = 8;
@@ -99,6 +101,77 @@ static void* GetDX11PresentAddress()
     UnregisterClassW(wc.lpszClassName, wc.hInstance);
 
     return pPresentAddress;
+}
+
+
+bool init = false;
+ID3D11Device* pDevice = nullptr;
+ID3D11DeviceContext* pContext = nullptr;
+ID3D11RenderTargetView* mainRenderTargetView = nullptr;
+HWND window = nullptr;
+
+// Mostly LLM generated
+static void initializeImGui(IDXGISwapChain* pSwapChain)
+{
+    // Get the device and context from the SwapChain
+    if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D11Device), (void**)&pDevice)))
+    {
+        pDevice->GetImmediateContext(&pContext);
+
+        // Get the Window Handle (BG3 Window)
+        DXGI_SWAP_CHAIN_DESC sd;
+        pSwapChain->GetDesc(&sd);
+        window = sd.OutputWindow;
+
+        // Create a Render Target View (Required for ImGui to know where to draw)
+        ID3D11Texture2D* pBackBuffer = nullptr;
+        if (SUCCEEDED(pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer)) && pBackBuffer)
+        {
+            if (SUCCEEDED(pDevice->CreateRenderTargetView(pBackBuffer, NULL, &mainRenderTargetView)))
+            {
+                // Initialize ImGui
+                ImGui::CreateContext();
+                ImGuiIO& io = ImGui::GetIO();
+
+                ImGui_ImplWin32_Init(window);
+                ImGui_ImplDX11_Init(pDevice, pContext);
+
+                init = true;
+            }
+            pBackBuffer->Release();
+        }
+    }
+}
+
+
+
+static HRESULT __stdcall detour_DX11Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags)
+{
+    if (!init)
+    {
+        initializeImGui(pSwapChain);
+        return original_DX11Present(pSwapChain, SyncInterval, Flags);
+    }
+
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    // We use GetBackgroundDrawList to draw directly on the screen without a window background
+    ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+
+    // =============================
+    // Our custom renderers go here
+    renderJoystick(drawList);
+    // =============================
+
+    ImGui::Render();
+
+    // Bind the render target and draw
+    pContext->OMSetRenderTargets(1, &mainRenderTargetView, NULL);
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+    return original_DX11Present(pSwapChain, SyncInterval, Flags);
 }
 
 

@@ -1,4 +1,5 @@
 #pragma once
+#include <imgui.h>
 
 
 struct JoystickState
@@ -16,3 +17,5 @@ extern JoystickState g_joystickState;
 void activateJoystick(float startX, float startY);
 void releaseJoystick();
 void moveJoystick(float translationX, float translationY);
+
+void renderJoystick(ImDrawList* drawList);

@@ -1,4 +1,3 @@
-
 #include <d3d11.h>
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
@@ -10,50 +9,7 @@
 #include "touch_handler.h"
 
 
-typedef HRESULT(__stdcall* IDXGISwapChainPresent)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
-extern IDXGISwapChainPresent original_DX11Present;
-
-bool init = false;
-ID3D11Device* pDevice = nullptr;
-ID3D11DeviceContext* pContext = nullptr;
-ID3D11RenderTargetView* mainRenderTargetView = nullptr;
-HWND window = nullptr;
-
 JoystickState g_joystickState = {};
-
-
-// Mostly LLM generated
-static void initializeImGui(IDXGISwapChain* pSwapChain)
-{
-	// Get the device and context from the SwapChain
-	if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D11Device), (void**)&pDevice)))
-	{
-		pDevice->GetImmediateContext(&pContext);
-
-		// Get the Window Handle (BG3 Window)
-		DXGI_SWAP_CHAIN_DESC sd;
-		pSwapChain->GetDesc(&sd);
-		window = sd.OutputWindow;
-
-		// Create a Render Target View (Required for ImGui to know where to draw)
-		ID3D11Texture2D* pBackBuffer = nullptr;
-		if (SUCCEEDED(pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer)) && pBackBuffer)
-		{
-			if (SUCCEEDED(pDevice->CreateRenderTargetView(pBackBuffer, NULL, &mainRenderTargetView)))
-			{
-				// Initialize ImGui
-				ImGui::CreateContext();
-				ImGuiIO& io = ImGui::GetIO();
-
-				ImGui_ImplWin32_Init(window);
-				ImGui_ImplDX11_Init(pDevice, pContext);
-
-				init = true;
-			}
-			pBackBuffer->Release();
-		}
-	}
-}
 
 
 static float calculateJoystickRadius()
@@ -124,28 +80,14 @@ void moveJoystick(float translationX, float translationY)
 }
 
 
-HRESULT __stdcall detour_DX11Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags)
+void renderJoystick(ImDrawList* drawList)
 {
-	if (!init)
-	{
-		initializeImGui(pSwapChain);
-		return original_DX11Present(pSwapChain, SyncInterval, Flags);
-	}
-
-	ImGui_ImplDX11_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
-
 	// Only the draw logic happens if the joystick is active
 	// You could ask why not also skip everything else and call original_DX11Present directly?
 	// The reason is that some fields like io.DisplaySize will be uninitialized if we skip the ImGui NewFrame calls
 	// For instance, io.DisplaySize.x will be -1, so we can't conditionally activate the joystick based on that in
 	// activateJoystick().
 	if (g_joystickState.isActive) {
-
-		// We use GetBackgroundDrawList to draw directly on the screen without a window background
-		ImDrawList* drawList = ImGui::GetBackgroundDrawList();
-
 		constexpr int circleSegments = 64;
 		constexpr float circleThickness = 5.0f;
 		constexpr float innerCircleRadiusFactor = 0.90f;
@@ -166,12 +108,4 @@ HRESULT __stdcall detour_DX11Present(IDXGISwapChain* pSwapChain, UINT SyncInterv
 		);
 		drawList->AddCircleFilled(innerCircleCenter, radius * innerCircleRadiusFactor, circleFillColor, circleSegments);
 	}
-
-	ImGui::Render();
-
-	// Bind the render target and draw
-	pContext->OMSetRenderTargets(1, &mainRenderTargetView, NULL);
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-	return original_DX11Present(pSwapChain, SyncInterval, Flags);
 }
