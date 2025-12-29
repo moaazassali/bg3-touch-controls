@@ -10,6 +10,7 @@
 #include "move_internal_cursor.h"
 #include "world_interaction.h"
 #include "action_requests.h"
+#include "ability_usage.h"
 
 
 reverse::processActionRequestsQueue_t original_processActionRequestsQueue = nullptr;
@@ -148,6 +149,7 @@ static void installHooks(uintptr_t start, uintptr_t end)
 	success &= installMoveInternalCursorModule(start, end);
 	success &= installWorldInteractionModule(start, end);
 	success &= installActionRequestsModule(start, end, false);
+	success &= installAbilityUsageModule(start, end);
 
 	if (success) {
 		std::cout << "All hooks installed successfully." << std::endl;
