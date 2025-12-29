@@ -54,6 +54,7 @@ add_library (BG3TouchControls SHARED
 	"src/gesture_processor/process_two_contact_drag.cpp"
 	"src/gesture_processor/actions_two_contact_drag.cpp"
 	"src/ability_usage/module.cpp"
+	"src/ability_usage/detect_primed_ability.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
