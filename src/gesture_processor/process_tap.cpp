@@ -4,18 +4,26 @@
 #include "sdl_bindings/sdl_bindings.h"
 #include "move_internal_cursor.h"
 #include "world_interaction.h"
+#include "ability_usage.h"
 
 
 void processTap(const GestureEvent& event, POINT clientPt) {
-	const auto prevEntity = getCurrentWorldTargetEntity();
-	moveInternalCursor((float)clientPt.x, (float)clientPt.y);
+	bool sendAbilityConfirmPress = false;
+	if (isAnAbilityPrimed() && isPointInsideConfirmButton((float)clientPt.x, (float)clientPt.y)) {
+		sendAbilityConfirmPress = true;
+	}
 
-	// Not really needed but if UI element was clicked on before and has a hover effect active like
-	// the details pop-up, this sends a UIMouseMove event which will clear that hover effect properly.
-	// This is also very helpful in combat mode so the user can inspect enemies first without attacking.
-	// XXX: ideally we should find a simple way to disable all UI hover effects because
-	// they are annoying even for UI taps.
-	sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+	const auto prevEntity = getCurrentWorldTargetEntity();
+	if (!sendAbilityConfirmPress) {
+		moveInternalCursor((float)clientPt.x, (float)clientPt.y);
+		// Not really needed but if UI element was clicked on before and has a hover effect active like
+		// the details pop-up, this sends a UIMouseMove event which will clear that hover effect properly.
+		// This is also very helpful in combat mode so the user can inspect enemies first without attacking.
+		// XXX: ideally we should find a simple way to disable all UI hover effects because
+		// they are annoying even for UI taps.
+		sdl_bindings::moveCursor(clientPt.x, clientPt.y);
+	}
+
 
 	if (isCursorOverUI()) {
 		sdl_bindings::clickMouseButton(SDL_BUTTON_LEFT);
@@ -48,8 +56,16 @@ void processTap(const GestureEvent& event, POINT clientPt) {
 	const auto currEntity = getCurrentWorldTargetEntity();
 	freezeProcessingWorldEntityInteractions();
 
+
+	if (isAnAbilityPrimed() && !sendAbilityConfirmPress) {
+		// Only send hover effect. No clicks allowed at all.
+		// Confirm button has to be used to actually execute the ability.
+		return;
+	}
+
+
 	bool sentPressIn = false;
-	if (currEntity.type != WorldEntityType::None && currEntity.type != WorldEntityType::NonInteractable) {
+	if (currEntity.type != WorldEntityType::None && currEntity.type != WorldEntityType::NonInteractable && !sendAbilityConfirmPress) {
 		if (currEntity.type == prevEntity.type && currEntity.id == prevEntity.id) {
 			// Only send 'press in' event instead of full click immediately.
 			// This fixes a bug in the world interaction system where using an ability and then clicking
@@ -61,14 +77,16 @@ void processTap(const GestureEvent& event, POINT clientPt) {
 		}
 	}
 	else {
-		// Otherwise, the click is on the ground for character movement or over nothing
+		// Otherwise, the click is on the ground for character movement, over nothing, or ability confirm
 		// So, we send the click unconditionally
 		sdl_bindings::pressMouseButton(SDL_BUTTON_LEFT);
 		sentPressIn = true;
+		pressInConfirmButton();
 	}
 
 	auto pressOutTask = []() {
 		sdl_bindings::releaseMouseButton(SDL_BUTTON_LEFT);
+		pressOutConfirmButton();
 	};
 
 	// We need a significant delay here to address a bug in the world interaction system.

@@ -5,6 +5,7 @@
 
 #include "game_bindings.h"
 #include "joystick/joystick.h"
+#include "ability_usage.h"
 
 
 typedef HRESULT(__stdcall* IDXGISwapChainPresent)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
@@ -163,6 +164,7 @@ static HRESULT __stdcall detour_DX11Present(IDXGISwapChain* pSwapChain, UINT Syn
     // =============================
     // Our custom renderers go here
     renderJoystick(drawList);
+    renderConfirmAbilityButton(drawList);
     // =============================
 
     ImGui::Render();

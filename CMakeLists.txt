@@ -56,6 +56,7 @@ add_library (BG3TouchControls SHARED
 	"src/ability_usage/detect_primed_ability.cpp"
 	"src/render_hook/module.cpp"
 	"src/render_hook/dx11_present_hook.cpp"
+	"src/ability_usage/draw_confirm_ability_button.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
