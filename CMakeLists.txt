@@ -63,6 +63,7 @@ add_library (BG3TouchControls SHARED
 	"src/ui_bindings/get_selected_character.cpp"
 	"src/ui_bindings/is_in_turn_based_mode.cpp"
 	"src/ui_bindings/get_character_mode.cpp"
+	"src/ui_bindings/get_player_character_properties.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")

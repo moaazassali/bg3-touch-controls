@@ -10,6 +10,7 @@ bool findGetCurrentPlayerFunction(uintptr_t start, uintptr_t end);
 bool findGetSelectedCharacterFunction(uintptr_t start, uintptr_t end);
 bool findInTurnBasedModeFunction(uintptr_t start, uintptr_t end);
 bool findCharacterModeFunction(uintptr_t start, uintptr_t end);
+bool findPlayerCharacterPropertiesFunction(uintptr_t start, uintptr_t end)
 
 
 bool installUIBindingsModule(uintptr_t start, uintptr_t end) {
@@ -23,6 +24,7 @@ bool installUIBindingsModule(uintptr_t start, uintptr_t end) {
 	success &= findGetSelectedCharacterFunction(start, end);
 	success &= findInTurnBasedModeFunction(start, end);
 	success &= findCharacterModeFunction(start, end);
+	success &= findPlayerCharacterPropertiesFunction(start, end);
 	printModuleInstallResult(success);
 	return success;
 }
