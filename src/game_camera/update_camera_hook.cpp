@@ -3,12 +3,15 @@
 #include "game_camera.h"
 #include "pending_camera_updates.h"
 #include "game_bindings.h"
+#include <bitset>
 
 
 // Adapted from BG3_NativeCameraTweaks:
 // https://github.com/ersh1/BG3_NativeCameraTweaks/blob/876f2da98ede96d3db2884ffd9fb25687ada5ff1/src/Hooks.h
 using updateCamera_t = void(*)(uint64_t a1, uint64_t a2, DeltaTimeObject* a3, UnkObject* a4);
 updateCamera_t original_updateCamera = nullptr;
+
+static CameraModeFlags cameraModeFlags;
 
 
 // Based on manual testing, this is called on every frame and is tied to the frame rate.
@@ -24,6 +27,7 @@ static void detour_updateCamera(uint64_t a1, uint64_t a2, DeltaTimeObject* a3, U
 		// For now we assume only one input mode (touch).
 		auto cam = a4->currentCameraObject;
 		cam->zoomDelta = g_pendingCameraUpdates.zoomDelta.exchange(0.0f);
+		cameraModeFlags = cam->cameraModeFlags;
 	}
 	original_updateCamera(a1, a2, a3, a4);
 }
@@ -37,4 +41,10 @@ bool installUpdateCameraHook(uintptr_t start, uintptr_t end)
 	int32_t relativeOffset = *reinterpret_cast<int32_t*>(matchAddr + 1);
 	uintptr_t targetAddr = matchAddr + 5 + relativeOffset;
 	return installHook((void*)targetAddr, &detour_updateCamera, (void**)&original_updateCamera, "updateCamera");
+}
+
+
+CameraModeFlags getCurrentCameraModeFlags()
+{
+	return cameraModeFlags;
 }

@@ -18,3 +18,19 @@ bool installGameCameraModule(uintptr_t start, uintptr_t end) {
 	printModuleInstallResult(success);
 	return success;
 }
+
+
+CameraModeFlags getCurrentCameraModeFlags();
+
+
+bool isInCombat() {
+	auto flags = getCurrentCameraModeFlags();
+	return (flags & CameraModeFlags::kCombat) != 0;
+}
+
+
+bool canInteractWithWorld() {
+	auto flags = getCurrentCameraModeFlags();
+	return (flags & CameraModeFlags::kControlledByPlayer) != 0 && (flags & CameraModeFlags::kControlledByAbility) == 0;
+}
+
