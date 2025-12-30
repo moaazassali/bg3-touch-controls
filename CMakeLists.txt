@@ -20,7 +20,6 @@ add_library (BG3TouchControls SHARED
 	"src/setup_thread.cpp"
 	"src/custom_wnd_proc.cpp"
 	"src/Hooks/calculate_pitch_hook.cpp"
-	"src/Hooks/update_camera_pitch_hook.cpp"
 	"src/game_bindings.cpp"
 	"src/sdl_bindings/sdl_create_window_hook.cpp"
 	"src/sdl_bindings/sdl_bindings.cpp"
@@ -53,11 +52,12 @@ add_library (BG3TouchControls SHARED
 	"src/gesture_processor/actions_two_contact_drag.cpp"
 	"src/ability_usage/module.cpp"
 	"src/ability_usage/detect_primed_ability.cpp"
+	"src/ability_usage/draw_confirm_ability_button.cpp"
 	"src/render_hook/module.cpp"
 	"src/render_hook/dx11_present_hook.cpp"
-	"src/ability_usage/draw_confirm_ability_button.cpp"
 	"src/game_camera/module.cpp"
 	"src/game_camera/update_camera_hook.cpp"
+	"src/game_camera/update_camera_pitch.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")

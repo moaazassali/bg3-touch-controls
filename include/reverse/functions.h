@@ -11,14 +11,6 @@ namespace reverse {
 	using calculatePitch_t = float(*)(CameraObject* a1, uint8_t a2, uint8_t a3);
 	constexpr const char* pattern_calculatePitch = "E8 ?? ?? ?? ?? 80 BF 4C 01 00 00 00";
 
-	// Adapted from BG3_NativeCameraTweaks
-	using getCameraDefinition_t = CameraDefinition* (*)(CameraObject* a1);
-	constexpr const char* pattern_getCameraDefinition = "48 8B 05 ?? ?? ?? ?? 80 B8 32 13 00 00 00 74 07";
-
-	// Adapted from BG3_NativeCameraTweaks
-	using updateCameraPitch_t = void(*)(uint64_t a1, uint64_t a2, CameraObject* a3, DeltaTimeObject* a4);
-	constexpr const char* pattern_updateCameraPitch = "E8 ?? ?? ?? ?? 48 8B 46 70 4C 8D 45 90 0F 28 46 30";
-
 	// Unknown return type and parameters
 	// Called repeatedly (not sure about interval) when using controller to check if character should be moved
 	// NOPing this stops character movement via controller left stick input

@@ -3,12 +3,16 @@
 
 
 bool installUpdateCameraHook(uintptr_t start, uintptr_t end);
+bool getCameraDefinitionPointer(uintptr_t start, uintptr_t end);
+bool installUpdateCameraPitchHook(uintptr_t start, uintptr_t end);
 
 
 bool installGameCameraModule(uintptr_t start, uintptr_t end) {
 	printModuleInstallHeader("Game Camera");
 	bool success = true;
 	success &= installUpdateCameraHook(start, end);
+	success &= getCameraDefinitionPointer(start, end);
+	success &= installUpdateCameraPitchHook(start, end);
 	printModuleInstallResult(success);
 	return success;
 }
