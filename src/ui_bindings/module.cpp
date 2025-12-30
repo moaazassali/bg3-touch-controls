@@ -10,7 +10,8 @@ bool findGetCurrentPlayerFunction(uintptr_t start, uintptr_t end);
 bool findGetSelectedCharacterFunction(uintptr_t start, uintptr_t end);
 bool findInTurnBasedModeFunction(uintptr_t start, uintptr_t end);
 bool findCharacterModeFunction(uintptr_t start, uintptr_t end);
-bool findPlayerCharacterPropertiesFunction(uintptr_t start, uintptr_t end)
+bool findPlayerCharacterPropertiesFunction(uintptr_t start, uintptr_t end);
+bool findIsCastingFunction(uintptr_t start, uintptr_t end);
 
 
 bool installUIBindingsModule(uintptr_t start, uintptr_t end) {
@@ -25,6 +26,7 @@ bool installUIBindingsModule(uintptr_t start, uintptr_t end) {
 	success &= findInTurnBasedModeFunction(start, end);
 	success &= findCharacterModeFunction(start, end);
 	success &= findPlayerCharacterPropertiesFunction(start, end);
+	success &= findIsCastingFunction(start, end);
 	printModuleInstallResult(success);
 	return success;
 }
@@ -32,6 +34,7 @@ bool installUIBindingsModule(uintptr_t start, uintptr_t end) {
 
 bool isInTurnBasedMode();
 int64_t getCharacterModeID();
+bool isCasting();
 
 
 bool isSelectedCharacterInTurnBasedMode() {
@@ -55,4 +58,9 @@ CharacterMode getSelectedCharacterMode() {
 	default:
 		return CharacterMode::Invalid;
 	}
+}
+
+
+bool isSelectedCharacterCasting() {
+	return isCasting();
 }
