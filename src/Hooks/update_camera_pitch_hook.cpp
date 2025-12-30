@@ -10,7 +10,7 @@ reverse::getCameraDefinition_t original_getCameraDefinition = nullptr;
 
 
 // This gets called every frame in original_updateCamera
-static void detour_updateCameraPitch(uint64_t a1, uint64_t a2, reverse::CameraObject* a3, reverse::DeltaTimeObject* a4)
+static void detour_updateCameraPitch(uint64_t a1, uint64_t a2, CameraObject* a3, DeltaTimeObject* a4)
 {
 	if (a3) {
 		const auto camDef = original_getCameraDefinition(a3);

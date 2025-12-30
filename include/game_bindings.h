@@ -12,7 +12,6 @@ bool asmPatchAtOffset(uintptr_t address, std::size_t offset, const std::vector<u
 bool installHook(LPVOID pTarget, LPVOID pDetour, LPVOID* ppOriginal, const char* hookName);
 
 
-bool installUpdateCameraHook(uintptr_t start, uintptr_t end);
 bool installCalculatePitchHook(uintptr_t start, uintptr_t end);
 bool installUpdateCameraPitchHook(uintptr_t start, uintptr_t end);
 bool installFilterPreFinalActionsQueueHook(uintptr_t start, uintptr_t end);

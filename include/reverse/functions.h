@@ -3,24 +3,20 @@
 #include <SDL.h>
 
 #include "reverse/Camera.h"
+#include "game_camera.h"
 
 
 namespace reverse {
-	// Adapted from BG3_NativeCameraTweaks:
-	// https://github.com/ersh1/BG3_NativeCameraTweaks/blob/876f2da98ede96d3db2884ffd9fb25687ada5ff1/src/Hooks.h
-	using updateCamera_t = void(*)(uint64_t a1, uint64_t a2, reverse::DeltaTimeObject* a3, reverse::UnkObject* a4);
-	constexpr const char* pattern_updateCamera = "E8 ?? ?? ?? ?? 48 8D 8D F8 04 00 00 E8 ?? ?? ?? ?? E9 AF FD FF FF";
-
 	// Adapted from BG3_NativeCameraTweaks
-	using calculatePitch_t = float(*)(reverse::CameraObject* a1, uint8_t a2, uint8_t a3);
+	using calculatePitch_t = float(*)(CameraObject* a1, uint8_t a2, uint8_t a3);
 	constexpr const char* pattern_calculatePitch = "E8 ?? ?? ?? ?? 80 BF 4C 01 00 00 00";
 
 	// Adapted from BG3_NativeCameraTweaks
-	using getCameraDefinition_t = reverse::CameraDefinition* (*)(reverse::CameraObject* a1);
+	using getCameraDefinition_t = CameraDefinition* (*)(CameraObject* a1);
 	constexpr const char* pattern_getCameraDefinition = "48 8B 05 ?? ?? ?? ?? 80 B8 32 13 00 00 00 74 07";
 
 	// Adapted from BG3_NativeCameraTweaks
-	using updateCameraPitch_t = void(*)(uint64_t a1, uint64_t a2, reverse::CameraObject* a3, reverse::DeltaTimeObject* a4);
+	using updateCameraPitch_t = void(*)(uint64_t a1, uint64_t a2, CameraObject* a3, DeltaTimeObject* a4);
 	constexpr const char* pattern_updateCameraPitch = "E8 ?? ?? ?? ?? 48 8B 46 70 4C 8D 45 90 0F 28 46 30";
 
 	// Unknown return type and parameters

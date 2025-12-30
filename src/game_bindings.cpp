@@ -12,6 +12,7 @@
 #include "action_requests.h"
 #include "ability_usage.h"
 #include "render_hook.h"
+#include "game_camera.h"
 
 
 reverse::processActionRequestsQueue_t original_processActionRequestsQueue = nullptr;
@@ -134,14 +135,12 @@ static void initializePointers(uintptr_t start, uintptr_t end)
 static void installHooks(uintptr_t start, uintptr_t end)
 {
 	bool success = true;
-	success &= installUpdateCameraHook(start, end);
 	success &= installCalculatePitchHook(start, end);
 	success &= installUpdateCameraPitchHook(start, end);
 	success &= installMinimumHotbarRowsPatch(start, end);
 	success &= installRegisterHotBarUIBindingsHook(start, end);
 	success &= installIncreaseHotBarUIBindingHandlersStructSizePatch(start, end);
 	success &= installRegisterHotBarUIBindingHandlersHook(start, end);
-	//success &= installPushToActionRequestsQueueHook(start, end);
 	//success &= installFilterPreFinalActionsQueueHook(start, end);
 	success &= installMoveCharacterHook(start, end);
 	success &= installRunMoveCharacterwithoutControllerPatch(start, end);
@@ -151,6 +150,7 @@ static void installHooks(uintptr_t start, uintptr_t end)
 	success &= installActionRequestsModule(start, end, false);
 	success &= installAbilityUsageModule(start, end);
 	success &= installRenderHookModule();
+	success &= installGameCameraModule(start, end);
 
 	if (success) {
 		std::cout << "All hooks installed successfully." << std::endl;
