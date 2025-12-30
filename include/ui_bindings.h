@@ -18,3 +18,5 @@ enum class CharacterMode {
 CharacterMode getSelectedCharacterMode();
 
 bool isSelectedCharacterCasting();
+
+bool isSelectedCharacterMoving();

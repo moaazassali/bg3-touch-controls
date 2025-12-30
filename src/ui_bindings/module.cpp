@@ -12,6 +12,7 @@ bool findInTurnBasedModeFunction(uintptr_t start, uintptr_t end);
 bool findCharacterModeFunction(uintptr_t start, uintptr_t end);
 bool findPlayerCharacterPropertiesFunction(uintptr_t start, uintptr_t end);
 bool findIsCastingFunction(uintptr_t start, uintptr_t end);
+bool findMovingHandlerFunction(uintptr_t start, uintptr_t end);
 
 
 bool installUIBindingsModule(uintptr_t start, uintptr_t end) {
@@ -27,6 +28,7 @@ bool installUIBindingsModule(uintptr_t start, uintptr_t end) {
 	success &= findCharacterModeFunction(start, end);
 	success &= findPlayerCharacterPropertiesFunction(start, end);
 	success &= findIsCastingFunction(start, end);
+	success &= findMovingHandlerFunction(start, end);
 	printModuleInstallResult(success);
 	return success;
 }
@@ -35,6 +37,7 @@ bool installUIBindingsModule(uintptr_t start, uintptr_t end) {
 bool isInTurnBasedMode();
 int64_t getCharacterModeID();
 bool isCasting();
+bool isMoving();
 
 
 bool isSelectedCharacterInTurnBasedMode() {
@@ -63,4 +66,9 @@ CharacterMode getSelectedCharacterMode() {
 
 bool isSelectedCharacterCasting() {
 	return isCasting();
+}
+
+
+bool isSelectedCharacterMoving() {
+	return isMoving();
 }
