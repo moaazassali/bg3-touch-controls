@@ -22,3 +22,5 @@ bool isSelectedCharacterCasting();
 bool isSelectedCharacterMoving();
 
 bool selectedCharacterHasAbilityPrimed();
+
+bool isSelectedCharacterTurn();

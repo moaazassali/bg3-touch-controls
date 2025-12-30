@@ -67,6 +67,7 @@ add_library (BG3TouchControls SHARED
 	"src/ui_bindings/is_casting.cpp"
 	"src/ui_bindings/is_moving.cpp"
 	"src/ui_bindings/get_current_spell_task.cpp"
+	"src/ui_bindings/is_selected_character_turn.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
