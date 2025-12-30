@@ -20,3 +20,5 @@ CharacterMode getSelectedCharacterMode();
 bool isSelectedCharacterCasting();
 
 bool isSelectedCharacterMoving();
+
+bool selectedCharacterHasAbilityPrimed();

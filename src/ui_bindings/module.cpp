@@ -13,6 +13,7 @@ bool findCharacterModeFunction(uintptr_t start, uintptr_t end);
 bool findPlayerCharacterPropertiesFunction(uintptr_t start, uintptr_t end);
 bool findIsCastingFunction(uintptr_t start, uintptr_t end);
 bool findMovingHandlerFunction(uintptr_t start, uintptr_t end);
+bool findCurrentSpellTaskHandlerFunction(uintptr_t start, uintptr_t end);
 
 
 bool installUIBindingsModule(uintptr_t start, uintptr_t end) {
@@ -29,6 +30,7 @@ bool installUIBindingsModule(uintptr_t start, uintptr_t end) {
 	success &= findPlayerCharacterPropertiesFunction(start, end);
 	success &= findIsCastingFunction(start, end);
 	success &= findMovingHandlerFunction(start, end);
+	success &= findCurrentSpellTaskHandlerFunction(start, end);
 	printModuleInstallResult(success);
 	return success;
 }
@@ -38,6 +40,7 @@ bool isInTurnBasedMode();
 int64_t getCharacterModeID();
 bool isCasting();
 bool isMoving();
+void* getCurrentSpellTask();
 
 
 bool isSelectedCharacterInTurnBasedMode() {
@@ -71,4 +74,10 @@ bool isSelectedCharacterCasting() {
 
 bool isSelectedCharacterMoving() {
 	return isMoving();
+}
+
+
+bool selectedCharacterHasAbilityPrimed() {
+	void* spellTask = getCurrentSpellTask();
+	return spellTask != nullptr;
 }
