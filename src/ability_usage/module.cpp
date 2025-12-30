@@ -16,9 +16,9 @@ bool installAbilityUsageModule(uintptr_t start, uintptr_t end) {
 }
 
 
-bool getAbilityPrimedFlag();
+bool shouldRenderConfirmButton();
 
 
-bool isAnAbilityPrimed() {
-	return getAbilityPrimedFlag();
+bool isConfirmButtonVisible() {
+	return shouldRenderConfirmButton();
 }

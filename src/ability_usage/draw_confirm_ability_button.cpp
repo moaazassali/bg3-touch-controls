@@ -2,6 +2,7 @@
 
 #include "ability_usage.h"
 #include "touch_handler.h"
+#include "game_camera.h"
 
 
 // Mostly LLM generated
@@ -34,9 +35,19 @@ void pressOutConfirmButton()
 }
 
 
+bool getAbilityPrimedFlag();
+
+
+bool shouldRenderConfirmButton()
+{
+	bool inCombatAndCanClickOnWorld = isInCombat() && canInteractWithWorld();
+	return getAbilityPrimedFlag() || inCombatAndCanClickOnWorld;
+}
+
+
 bool isPointInsideConfirmButton(float x, float y)
 {
-	if (!isAnAbilityPrimed()) {
+	if (!shouldRenderConfirmButton()) {
 		return false;
 	}
 
@@ -85,7 +96,7 @@ static void drawCheckmark(ImDrawList* drawList, ImVec2 center, float size, ImU32
 void renderConfirmAbilityButton(ImDrawList* drawList)
 {
 	// Only render the button when an ability is primed
-	if (!isAnAbilityPrimed()) {
+	if (!shouldRenderConfirmButton()) {
 		g_buttonState.isPressed = false;
 		return;
 	}

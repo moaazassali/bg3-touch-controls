@@ -5,7 +5,7 @@
 
 bool installAbilityUsageModule(uintptr_t start, uintptr_t end);
 
-bool isAnAbilityPrimed();
+bool isConfirmButtonVisible();
 
 void renderConfirmAbilityButton(ImDrawList* drawList);
 bool isPointInsideConfirmButton(float x, float y);

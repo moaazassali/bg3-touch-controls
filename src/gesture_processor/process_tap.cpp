@@ -5,11 +5,12 @@
 #include "move_internal_cursor.h"
 #include "world_interaction.h"
 #include "ability_usage.h"
+#include "game_camera.h"
 
 
 void processTap(const GestureEvent& event, POINT clientPt) {
 	bool sendAbilityConfirmPress = false;
-	if (isAnAbilityPrimed() && isPointInsideConfirmButton((float)clientPt.x, (float)clientPt.y)) {
+	if (isConfirmButtonVisible() && isPointInsideConfirmButton((float)clientPt.x, (float)clientPt.y)) {
 		sendAbilityConfirmPress = true;
 	}
 
@@ -41,11 +42,11 @@ void processTap(const GestureEvent& event, POINT clientPt) {
 		// on an entity, so we send a click on the entity instead of just focusing on it again...
 		// 
 		// Either way, clearing the active entity interactions state will fix it.
-		clearActiveWorldEntityInteractions(); 
+		clearActiveWorldEntityInteractions();
 		freezeProcessingWorldEntityInteractions();
 		return;
 	}
-	
+
 	// Instead of clicking immediately on any entity, I found it more UX friendly to make the
 	// first click a focus/hover action, and only click on the second tap if the entity is the same
 	// So, only register a tap if we were focused on an interactable entity from a previous tap
@@ -57,9 +58,11 @@ void processTap(const GestureEvent& event, POINT clientPt) {
 	freezeProcessingWorldEntityInteractions();
 
 
-	if (isAnAbilityPrimed() && !sendAbilityConfirmPress) {
-		// Only send hover effect. No clicks allowed at all.
-		// Confirm button has to be used to actually execute the ability.
+	if (isConfirmButtonVisible() && !sendAbilityConfirmPress) {
+		// Only send hover effect if confirm button is visible because that indicates that
+		// an ability is primed, or we are in combat and can do some actions, etc...,
+		// so world taps should just focus/hover for inspection/aiming purposes.
+		// No clicks allowed at all. Confirm button must be used to confirm ability/move.
 		return;
 	}
 
