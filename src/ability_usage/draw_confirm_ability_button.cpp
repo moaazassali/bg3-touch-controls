@@ -49,12 +49,6 @@ bool isPointInsideConfirmButton(float x, float y)
 }
 
 
-ConfirmButtonState getConfirmButtonState()
-{
-	return g_buttonState;
-}
-
-
 static void drawCheckmark(ImDrawList* drawList, ImVec2 center, float size, ImU32 color, float thickness)
 {
 	// Draw a checkmark: short line going down-left, then longer line going up-right
