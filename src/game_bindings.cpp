@@ -13,6 +13,7 @@
 #include "ability_usage.h"
 #include "render_hook.h"
 #include "game_camera.h"
+#include "ui_bindings.h"
 
 
 reverse::processActionRequestsQueue_t original_processActionRequestsQueue = nullptr;
@@ -149,6 +150,7 @@ static void installHooks(uintptr_t start, uintptr_t end)
 	success &= installAbilityUsageModule(start, end);
 	success &= installRenderHookModule();
 	success &= installGameCameraModule(start, end);
+	success &= installUIBindingsModule(start, end);
 
 	if (success) {
 		std::cout << "All hooks installed successfully." << std::endl;

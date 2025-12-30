@@ -57,6 +57,7 @@ add_library (BG3TouchControls SHARED
 	"src/game_camera/module.cpp"
 	"src/game_camera/update_camera_hook.cpp"
 	"src/game_camera/update_camera_pitch.cpp"
+	"src/ui_bindings/module.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
