@@ -3,3 +3,5 @@
 
 
 bool installUIBindingsModule(uintptr_t start, uintptr_t end);
+
+bool isSelectedCharacterInTurnBasedMode();
