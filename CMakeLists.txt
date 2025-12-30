@@ -60,6 +60,7 @@ add_library (BG3TouchControls SHARED
 	"src/ui_bindings/module.cpp"
 	"src/ui_bindings/get_data_context.cpp"
 	"src/ui_bindings/get_current_player.cpp"
+	"src/ui_bindings/get_selected_character.cpp"
 )
 
 target_include_directories(BG3TouchControls PRIVATE "include/")
