@@ -5,6 +5,8 @@
 
 bool installGameCameraModule(uintptr_t start, uintptr_t end);
 
+bool isInCombat();
+
 
 // Mostly taken from with some new updates and corrections from my own research:
 // https://github.com/ersh1/BG3_NativeCameraTweaks/blob/876f2da98ede96d3db2884ffd9fb25687ada5ff1/src/RE/Camera.h
@@ -45,11 +47,17 @@ enum CameraModeFlags : uint32_t
 	// Or a better definition is "should be focused on party member" because we if we
 	// pan the camera manually with WASD, this flag remains set despite technically the
 	// camera not being focused on the party member anymore.
-	kPlayerGettingAttacked = 1 << 9,
+	// Or if it's the player's turn but they are no longer in control of the camera.
+	// Like if they clicked on an ability and the animation is now being played or even
+	// when using some movement ability like jump. The game is basically in control of
+	// the camera now. It then goes back to 0 after that animation ends.
+	// It is basically 1 when the camera is not controlled by any player or even NPC
+	// but rather by some ability or game event.
+	kControlledByAbility = 1 << 9,
 	// #new: gets set to 0 in combat when focused on an enemy
 	// I think it indicates whether the camera is player controlled or not
-	// Or more precisely, whether or not a non-player entity *might* control the camera
-	kControlledByEnemy = 1 << 10,
+	// Another way to put it is whether an NPC has some form of control over the camera
+	kControlledByPlayer = 1 << 10,
 };
 
 struct CameraDefinition
