@@ -5,6 +5,7 @@
 bool installUpdateCameraHook(uintptr_t start, uintptr_t end);
 bool getCameraDefinitionPointer(uintptr_t start, uintptr_t end);
 bool installUpdateCameraPitchHook(uintptr_t start, uintptr_t end);
+bool installCalculatePitchHook(uintptr_t start, uintptr_t end);
 
 
 bool installGameCameraModule(uintptr_t start, uintptr_t end) {
@@ -13,6 +14,7 @@ bool installGameCameraModule(uintptr_t start, uintptr_t end) {
 	success &= installUpdateCameraHook(start, end);
 	success &= getCameraDefinitionPointer(start, end);
 	success &= installUpdateCameraPitchHook(start, end);
+	success &= installCalculatePitchHook(start, end);
 	printModuleInstallResult(success);
 	return success;
 }

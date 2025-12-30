@@ -135,7 +135,6 @@ static void initializePointers(uintptr_t start, uintptr_t end)
 static void installHooks(uintptr_t start, uintptr_t end)
 {
 	bool success = true;
-	success &= installCalculatePitchHook(start, end);
 	success &= installMinimumHotbarRowsPatch(start, end);
 	success &= installRegisterHotBarUIBindingsHook(start, end);
 	success &= installIncreaseHotBarUIBindingHandlersStructSizePatch(start, end);

@@ -19,7 +19,6 @@ add_library (BG3TouchControls SHARED
 	"src/dllmain.cpp"
 	"src/setup_thread.cpp"
 	"src/custom_wnd_proc.cpp"
-	"src/Hooks/calculate_pitch_hook.cpp"
 	"src/game_bindings.cpp"
 	"src/sdl_bindings/sdl_create_window_hook.cpp"
 	"src/sdl_bindings/sdl_bindings.cpp"
