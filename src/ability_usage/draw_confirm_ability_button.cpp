@@ -3,6 +3,7 @@
 #include "ability_usage.h"
 #include "touch_handler.h"
 #include "game_camera.h"
+#include "ui_bindings.h"
 
 
 // Mostly LLM generated
@@ -35,13 +36,19 @@ void pressOutConfirmButton()
 }
 
 
-bool getAbilityPrimedFlag();
-
-
 bool shouldRenderConfirmButton()
 {
-	bool inCombatAndCanClickOnWorld = isInCombat() && canInteractWithWorld();
-	return getAbilityPrimedFlag() || inCombatAndCanClickOnWorld;
+	auto abilityPrimed = selectedCharacterHasAbilityPrimed();
+	if (abilityPrimed) {
+		// If we have an ability primed, there is no case where we shouldn't render the button
+		return true;
+	}
+	// If we are in combat/FTB, we need to show the button to confirm world actions like moving
+	// when we are actually able to do these actions.
+	auto characterMode = getSelectedCharacterMode();
+	bool inTurnBased = characterMode == CharacterMode::InCombat || characterMode == CharacterMode::InFTB;
+	bool castingAnimationActive = isSelectedCharacterCasting() && !selectedCharacterHasAbilityPrimed();
+	return isSelectedCharacterTurn() && inTurnBased && !castingAnimationActive;
 }
 
 

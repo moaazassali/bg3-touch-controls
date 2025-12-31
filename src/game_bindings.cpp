@@ -147,7 +147,6 @@ static void installHooks(uintptr_t start, uintptr_t end)
 	success &= installMoveInternalCursorModule(start, end);
 	success &= installWorldInteractionModule(start, end);
 	success &= installActionRequestsModule(start, end, false);
-	success &= installAbilityUsageModule(start, end);
 	success &= installRenderHookModule();
 	success &= installGameCameraModule(start, end);
 	success &= installUIBindingsModule(start, end);

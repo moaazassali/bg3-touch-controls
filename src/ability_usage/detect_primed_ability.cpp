@@ -2,6 +2,7 @@
 #include "utils.h"
 
 
+// [NOT USED ANYMORE; SWITCHED TO UI BINDINGS APPROACH]
 // This function's a1 is some sort of manager or context, which seems constant throughout the game session.
 // The function assigns some ability state struct, which changes often when abilities are used.
 // Specifically, it does this: *(a1 + 88) = 0

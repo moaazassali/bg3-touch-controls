@@ -10,12 +10,6 @@
 
 
 void processTap(const GestureEvent& event, POINT clientPt) {
-	auto mode = getSelectedCharacterMode();
-
-	std::cout << "==============================================================================\n";
-	std::cout << "is casting: " << (isSelectedCharacterCasting() ? "yes" : "no") << "\n";
-
-
 	bool sendAbilityConfirmPress = false;
 	if (isConfirmButtonVisible() && isPointInsideConfirmButton((float)clientPt.x, (float)clientPt.y)) {
 		sendAbilityConfirmPress = true;
